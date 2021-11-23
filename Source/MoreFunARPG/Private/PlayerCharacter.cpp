@@ -1,9 +1,37 @@
 #include "PlayerCharacter.h"
+
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 
+// Self Define Macro
+#define CHECK_DEAD() \
+{ \
+    if (bIsDead) \
+	{ \
+		return; \
+	} \
+}
 
+#define CHECK_DEAD_RETURN_BOOL() \
+{ \
+	if (bIsDead) \
+	{ \
+		return false; \
+	} \
+}
+
+#define CHECK_DEAD_RETURN_INT() \
+{ \
+	if (bIsDead) \
+	{ \
+		return -1; \
+	} \
+} 
+
+DEFINE_LOG_CATEGORY_STATIC(LogPlayerCharacter, Log, All)
+
+// Constructor
 APlayerCharacter::APlayerCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -14,6 +42,7 @@ APlayerCharacter::APlayerCharacter()
 	SetupAttributeDefaultValues();
 }
 
+// Init
 void APlayerCharacter::SetupComponent()
 {
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
@@ -45,43 +74,55 @@ void APlayerCharacter::SetupAttributeDefaultValues()
 
 	RunningSpeed = 1000.0f;
 	WalkSpeed = 600.0f;
+	SwitchRunningTime = 1.0f;
+
+	ComboResetDelayTime = 0.8f;
 
 	MaxEnergy = 100;
 	RunEnergyCost = 1;
-}
-
-void APlayerCharacter::BeginPlay()
-{
-	Super::BeginPlay();
-	UE_LOG(LogTemp, Log, TEXT("Spawn Player!"))
-	SetupRuntimeValues();
 }
 
 void APlayerCharacter::SetupRuntimeValues()
 {
 	CurHealth = MaxHealth;
 	CurEnergy = MaxEnergy;
+
+	CurCombo = 0;
+	MaxCombo = ComboDamageList.Num();
+
+	Movement = GetCharacterMovement();
+
+	bIsAttacking = false;
+	bIsHealing = false;
+	bIsRolling = false;
 }
 
-void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+// Life Cycle
+void APlayerCharacter::BeginPlay()
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-	InputComponent->BindAction("PrimaryAttack", IE_Pressed, this, &APlayerCharacter::OnPrimaryAttack);
-	InputComponent->BindAction("Heal", IE_Pressed, this, &APlayerCharacter::OnHeal);
-	InputComponent->BindAction("Roll", IE_Pressed, this, &APlayerCharacter::OnRoll);
-	InputComponent->BindAction("Jump", IE_Pressed, this, &APlayerCharacter::OnJump);
-
-	InputComponent->BindAction("Running", IE_Pressed, this, &APlayerCharacter::OnStartRunning);
-	InputComponent->BindAction("Running", IE_Released, this, &APlayerCharacter::OnStopRunning);
-
-	InputComponent->BindAxis("MoveForward", this, &APlayerCharacter::OnMoveForward);
-	InputComponent->BindAxis("MoveRight", this, &APlayerCharacter::OnMoveRight);
-	InputComponent->BindAxis("Turn", this, &APlayerCharacter::OnTurn);
-	InputComponent->BindAxis("LookUp", this, &APlayerCharacter::OnLookUp);
+	Super::BeginPlay();
+	SetupRuntimeValues();
 }
 
-void APlayerCharacter::ChangeHealth(int Diff)
+void APlayerCharacter::Tick(const float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	LerpSpeed(DeltaTime);
+}
+
+void APlayerCharacter::LerpSpeed(const float DeltaTime)
+{
+	if (FMath::IsNearlyEqual(Movement->MaxWalkSpeed, TargetMovingSpeed))
+	{
+		return;
+	}
+	const float Alpha = LerpTime / SwitchRunningTime;
+	Movement->MaxWalkSpeed = FMath::Lerp(Movement->MaxWalkSpeed, TargetMovingSpeed, Alpha);
+	LerpTime += DeltaTime;
+}
+
+void APlayerCharacter::ChangeHealth(const int Diff)
 {
 	const int OriginHealth = CurHealth;
 	CurHealth += Diff;
@@ -90,45 +131,106 @@ void APlayerCharacter::ChangeHealth(int Diff)
 	HealthChange.Broadcast(OriginHealth, CurHealth);
 }
 
-void APlayerCharacter::Tick(const float DeltaTime)
+// Action
+void APlayerCharacter::OnBeginRunning()
 {
-	Super::Tick(DeltaTime);
+	CHECK_DEAD()
+	
+	UE_LOG(LogPlayerCharacter, Log, TEXT("OnBeginRunning"))
+	TargetMovingSpeed = RunningSpeed;
+	LerpTime = 0.0f;
 }
 
-void APlayerCharacter::OnLookUp(const float Value)
+void APlayerCharacter::OnEndRunning()
 {
-	AddControllerPitchInput(Value);
+	UE_LOG(LogPlayerCharacter, Log, TEXT("OnEndRunning"))
+	TargetMovingSpeed = WalkSpeed;
+	LerpTime = 0.0f;
 }
 
-void APlayerCharacter::OnStartRunning()
+int32 APlayerCharacter::OnBeginPrimaryAttack()
 {
-	GetCharacterMovement()->MaxWalkSpeed = RunningSpeed;
+	CHECK_DEAD_RETURN_INT()
+	
+	if (bIsHealing || bIsRolling || bIsAttacking)
+	{
+		// ignore new input if player is already doing action
+		return -1;
+	}
+
+	UE_LOG(LogPlayerCharacter, Log, TEXT("OnBeginPrimaryAttack"))
+
+	bIsAttacking = true;
+
+	// cancel combo reset
+	GetWorldTimerManager().ClearTimer(ComboResetTimerHandle);
+
+	const int32 PlayingComboIndex = CurCombo;
+	NextCombo();
+	return PlayingComboIndex;
 }
 
-void APlayerCharacter::OnStopRunning()
+void APlayerCharacter::OnEndPrimaryAttack()
 {
-	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+	UE_LOG(LogPlayerCharacter, Log, TEXT("OnEndPrimaryAttack"))
+
+	bIsAttacking = false;
+
+	// reset combo after some time
+	constexpr bool bLoop = false;
+	GetWorldTimerManager().SetTimer(ComboResetTimerHandle, this,
+	                                &APlayerCharacter::ResetCombo, ComboResetDelayTime, bLoop);
 }
 
-void APlayerCharacter::OnPrimaryAttack()
+bool APlayerCharacter::OnBeginHealing()
 {
+	CHECK_DEAD_RETURN_BOOL()
+	if (bIsAttacking || bIsRolling)
+	{
+		return false;
+	}
+
+	UE_LOG(LogPlayerCharacter, Log, TEXT("OnBeginHealing"))
+	bIsHealing = true;
+
+	return true;
 }
 
-void APlayerCharacter::OnHeal()
+void APlayerCharacter::OnEndHealing()
 {
+	UE_LOG(LogPlayerCharacter, Log, TEXT("OnEndHealing"))
+
+	bIsHealing = false;
 }
 
-void APlayerCharacter::OnRoll()
+bool APlayerCharacter::OnBeginRolling()
 {
+	CHECK_DEAD_RETURN_BOOL()
+
+	if (bIsRolling)
+	{
+		return false;
+	}
+	
+	
+	UE_LOG(LogPlayerCharacter, Log, TEXT("OnBeginRoll"))
+	bIsRolling = true;
+
+	return true;
 }
 
-void APlayerCharacter::OnJump()
+void APlayerCharacter::OnEndRolling()
 {
-	Super::Jump();
+	UE_LOG(LogPlayerCharacter, Log, TEXT("OnEndRoll"))
+
+	bIsRolling = false;
 }
 
+// Axis
 void APlayerCharacter::OnMoveForward(const float Value)
 {
+	CHECK_DEAD()
+	
 	if (Controller != nullptr && Value != 0.0f)
 	{
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -141,6 +243,8 @@ void APlayerCharacter::OnMoveForward(const float Value)
 
 void APlayerCharacter::OnMoveRight(const float Value)
 {
+	CHECK_DEAD()
+
 	if (Controller != nullptr && Value != 0.0f)
 	{
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -153,5 +257,14 @@ void APlayerCharacter::OnMoveRight(const float Value)
 
 void APlayerCharacter::OnTurn(const float Value)
 {
+	CHECK_DEAD()
+	
 	AddControllerYawInput(Value);
+}
+
+void APlayerCharacter::OnLookUp(const float Value)
+{
+	CHECK_DEAD()
+	
+	AddControllerPitchInput(Value);
 }
