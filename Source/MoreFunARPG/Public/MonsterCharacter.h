@@ -25,5 +25,22 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	int32 AttackDamage;
 	
-	
+	// Action
+	UFUNCTION(BlueprintCallable)
+	void BeginAttack();
+
+	UFUNCTION(BlueprintCallable)
+	void EndAttack();
+
+	UFUNCTION(BlueprintCallable)
+	void BeginHealing();
+
+	UFUNCTION(BlueprintCallable)
+	void EndHealing();
+
+	UFUNCTION(BlueprintCallable)
+	void BeginRunning();
+
+	UFUNCTION(BlueprintCallable)
+	void EndRunning();
 };

@@ -1,13 +1,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ARPGCharacter.h"
 #include "GameFramework/Character.h"
 #include "PlayerCharacter.generated.h"
 
-DECLARE_EVENT_TwoParams(AGameCharacter, FHealthChange, int, int)
 
 UCLASS()
-class MOREFUNARPG_API APlayerCharacter final : public ACharacter
+class MOREFUNARPG_API APlayerCharacter final : public AARPGCharacter
 {
 	GENERATED_BODY()
 
@@ -16,119 +16,108 @@ public:
 	APlayerCharacter();
 
 	// Life Cycle
-private:
+protected:
 	virtual void Tick(const float DeltaTime) override;
-	void LerpSpeed(float DeltaTime);
 	virtual void BeginPlay() override;
+
+	// Setup Default
+	void SetupComponent();
+	void SetupAttachment() const;
+	void SetupComponentDefaultValues() const;
 
 	// Action
 	UFUNCTION(BlueprintCallable)
-	int32 OnBeginPrimaryAttack();
+	int32 BeginPrimaryAttack();
 
 	UFUNCTION(BlueprintCallable)
-	void OnEndPrimaryAttack();
+	void EndPrimaryAttack();
 
 	UFUNCTION(BlueprintCallable)
-	bool OnBeginHealing();
+	bool BeginHealing();
 
 	UFUNCTION(BlueprintCallable)
-	void OnEndHealing();
+	void EndHealing();
 
 	UFUNCTION(BlueprintCallable)
-	bool OnBeginRolling();
+	bool BeginRolling();
 
 	UFUNCTION(BlueprintCallable)
-	void OnEndRolling();
+	void EndRolling();
 
 	UFUNCTION(BlueprintCallable)
-	void OnBeginRunning();
+	void BeginRunning();
 
 	UFUNCTION(BlueprintCallable)
-	void OnEndRunning();
+	void EndRunning();
+
+	UFUNCTION(BlueprintCallable)
+	bool BeginOnHit();
+
+	UFUNCTION(BlueprintCallable)
+	void EndOnHit();
 
 	// Axis
 	UFUNCTION(BlueprintCallable)
-	void OnMoveRight(const float Value);
+	void MoveRight(const float Value);
 
 	UFUNCTION(BlueprintCallable)
-	void OnMoveForward(const float Value);
+	void MoveForward(const float Value);
 
 	UFUNCTION(BlueprintCallable)
-	void OnTurn(const float Value);
+	void Turn(const float Value);
 
 	UFUNCTION(BlueprintCallable)
-	void OnLookUp(const float Value);
+	void LookUp(const float Value);
 
 	// Attribute
-	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	int32 MaxHealth;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attribute")
+	float MaxEnergy = 100.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	float RunningSpeed;
+	float RunningEnergyCost = 20.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	float WalkSpeed;
+	float RunningEnergyRefuel = 30.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	float SwitchRunningTime;
+	TArray<int32> ComboDamageList = TArray<int32>{100, 100, 100, 100};
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	int32 MaxEnergy;
+	float ComboResetDelayTime = 0.8f;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	int32 RunEnergyCost;
-
-
-	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	TArray<int32> ComboDamageList;
+	float WalkSpeed = 600.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	float ComboResetDelayTime;
-	
+	float RunningSpeed = 1000.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	float SwitchRunningTime = 2.0f;
+
 	// Runtime Member
-	int32 CurEnergy;
-	int32 CurHealth;
+	UPROPERTY(BlueprintReadOnly)
+	float CurEnergy;
 
 	int32 MaxCombo;
 	int32 CurCombo;
+	FTimerHandle ComboResetTimerHandle;
 
-	bool bNeedLerp;
 	float TargetMovingSpeed;
 	float LerpTime;
 
-	UPROPERTY()
-	class UCharacterMovementComponent* Movement;
-
-	// struct	
-	FTimerHandle ComboResetTimerHandle;
-
-	// Getter
-	UPROPERTY(BlueprintGetter = IsAttacking)
+	// States
 	bool bIsAttacking;
-
-	UPROPERTY(BlueprintGetter = IsRolling)
 	bool bIsRolling;
-
-	UPROPERTY(BlueprintGetter = IsHealing)
 	bool bIsHealing;
 
-	UPROPERTY(BlueprintGetter = IsDead)
+	UPROPERTY(BlueprintReadOnly)
 	bool bIsDead;
-	
-public:
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE bool IsAttacking() const { return bIsAttacking; }
 
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE bool IsRolling() const { return bIsRolling; }
+	bool bIsOnHit;
+	bool bIsRunning;
 
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE bool IsHealing() const { return bIsHealing; }
+	FORCEINLINE bool CanMove() const { return (bIsAttacking || bIsHealing || bIsRolling || bIsOnHit) == false; };
 
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE bool IsDead() const { return bIsDead; }
-	
-private:
 	// Component
 	UPROPERTY(VisibleAnywhere)
 	class UStaticMeshComponent* CharacterMesh;
@@ -138,27 +127,26 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	class UCameraComponent* FollowCamera;
-	
-	// Init
-	void SetupComponent();
-	void SetupAttachment() const;
-	void SetupComponentDefaultValues() const;
-	void SetupAttributeDefaultValues();
 
-	void SetupRuntimeValues();
+	// Operation 
+	void LerpSpeed(const float DeltaTime);
+	void UpdateEnergy(const float DeltaTime);
 
-public:
-	// Event / Delegate
-	FORCEINLINE FHealthChange& HealthChangeEvent() { return HealthChange; }
-	
-private:
-	FHealthChange HealthChange;
-
-	void ChangeHealth(int Diff);
 	FORCEINLINE void ResetCombo()
 	{
 		UE_LOG(LogTemp, Log, TEXT("Combo reset!"))
 		CurCombo = 0;
 	}
+
 	FORCEINLINE void NextCombo() { CurCombo = (CurCombo + 1) % MaxCombo; }
+
+
+	float HorizontalInput;
+	float VerticalInput;
+
+	FORCEINLINE bool IsGettingMovementInput() const
+	{
+		return FMath::IsNearlyZero(HorizontalInput) == false
+			|| FMath::IsNearlyZero(VerticalInput) == false;
+	}
 };
