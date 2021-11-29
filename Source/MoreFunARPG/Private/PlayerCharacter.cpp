@@ -7,27 +7,13 @@
 #include "GameFramework/SpringArmComponent.h"
 
 // Self Define Macro
+#define SUCCESS true
+#define FAIL false
 #define CHECK_DEAD() \
 { \
-    if (bIsDead) \
-	{ \
-		return; \
-	} \
-}
-
-#define CHECK_DEAD_RETURN_BOOL() \
-{ \
 	if (bIsDead) \
 	{ \
-		return false; \
-	} \
-}
-
-#define CHECK_DEAD_RETURN_INT() \
-{ \
-	if (bIsDead) \
-	{ \
-		return -1; \
+		return FAIL; \
 	} \
 }
 
@@ -233,18 +219,20 @@ void APlayerCharacter::InterruptExistingStates()
 }
 
 // Action
-void APlayerCharacter::BeginRunning()
+bool APlayerCharacter::BeginRunning()
 {
 	CHECK_DEAD()
 	if (IsGettingMovementInput() == false)
 	{
-		return;
+		return FAIL;
 	}
 
 	UE_LOG(LogPlayerCharacter, Log, TEXT("OnBeginRunning"))
 	bIsRunning = true;
 	TargetMovingSpeed = RunningSpeed;
 	LerpTime = 0.0f;
+
+	return SUCCESS;
 }
 
 void APlayerCharacter::EndRunning()
@@ -255,14 +243,14 @@ void APlayerCharacter::EndRunning()
 	LerpTime = 0.0f;
 }
 
-int32 APlayerCharacter::BeginPrimaryAttack()
+bool APlayerCharacter::BeginPrimaryAttack(int32& OutComboAnimIndex)
 {
-	CHECK_DEAD_RETURN_INT()
+	CHECK_DEAD()
 
 	if (CanMove() == false)
 	{
 		// ignore new input if player is already doing action
-		return -1;
+		return FAIL;
 	}
 
 	UE_LOG(LogPlayerCharacter, Log, TEXT("OnBeginPrimaryAttack"))
@@ -272,9 +260,10 @@ int32 APlayerCharacter::BeginPrimaryAttack()
 	// cancel combo reset
 	GetWorldTimerManager().ClearTimer(ComboResetTimerHandle);
 
-	const int32 PlayingComboIndex = CurCombo;
+	OutComboAnimIndex = CurCombo;
 	NextCombo();
-	return PlayingComboIndex;
+	
+	return SUCCESS;
 }
 
 void APlayerCharacter::EndPrimaryAttack()
@@ -291,16 +280,16 @@ void APlayerCharacter::EndPrimaryAttack()
 
 bool APlayerCharacter::BeginHealing()
 {
-	CHECK_DEAD_RETURN_BOOL()
+	CHECK_DEAD()
 	if (CanMove() == false)
 	{
-		return false;
+		return FAIL;
 	}
 
 	UE_LOG(LogPlayerCharacter, Log, TEXT("OnBeginHealing"))
 	bIsHealing = true;
 
-	return true;
+	return SUCCESS;
 }
 
 void APlayerCharacter::EndHealing()
@@ -312,11 +301,11 @@ void APlayerCharacter::EndHealing()
 
 bool APlayerCharacter::BeginRolling()
 {
-	CHECK_DEAD_RETURN_BOOL()
+	CHECK_DEAD()
 
 	if (bIsRolling)
 	{
-		return false;
+		return FAIL;
 	}
 
 	// interrupt from other states
@@ -326,7 +315,7 @@ bool APlayerCharacter::BeginRolling()
 	UE_LOG(LogPlayerCharacter, Log, TEXT("OnBeginRoll"))
 	bIsRolling = true;
 
-	return true;
+	return SUCCESS;
 }
 
 void APlayerCharacter::EndRolling()
@@ -339,10 +328,10 @@ void APlayerCharacter::EndRolling()
 
 bool APlayerCharacter::BeginOnHit()
 {
-	CHECK_DEAD_RETURN_BOOL()
+	CHECK_DEAD()
 	if (bIsInvincible)
 	{
-		return false;
+		return FAIL;
 	}
 
 	InterruptExistingStates();
@@ -353,7 +342,7 @@ bool APlayerCharacter::BeginOnHit()
 		&APlayerCharacter::EndInvincible, DefaultInvisibleTime, Loop);
 	
 	bIsOnHit = true;
-	return true;
+	return SUCCESS;
 }
 
 void APlayerCharacter::EndOnHit()
@@ -361,10 +350,12 @@ void APlayerCharacter::EndOnHit()
 	bIsOnHit = false;
 }
 
-void APlayerCharacter::BeginInvincible()
+bool APlayerCharacter::BeginInvincible()
 {
 	bIsInvincible = true;
 	OnInvincibleBegin();
+
+	return SUCCESS;
 }
 
 void APlayerCharacter::EndInvincible()
@@ -374,7 +365,7 @@ void APlayerCharacter::EndInvincible()
 }
 
 // Axis
-void APlayerCharacter::MoveForward(const float Value)
+bool APlayerCharacter::MoveForward(const float Value)
 {
 	CHECK_DEAD()
 
@@ -387,9 +378,11 @@ void APlayerCharacter::MoveForward(const float Value)
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		AddMovementInput(Direction, Value);
 	}
+
+	return SUCCESS;
 }
 
-void APlayerCharacter::MoveRight(const float Value)
+bool APlayerCharacter::MoveRight(const float Value)
 {
 	CHECK_DEAD()
 	
@@ -402,18 +395,22 @@ void APlayerCharacter::MoveRight(const float Value)
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		AddMovementInput(Direction, Value);
 	}
+
+	return SUCCESS;
 }
 
-void APlayerCharacter::Turn(const float Value)
+bool APlayerCharacter::Turn(const float Value)
 {
 	CHECK_DEAD()
 
 	AddControllerYawInput(Value);
+	return SUCCESS;
 }
 
-void APlayerCharacter::LookUp(const float Value)
+bool APlayerCharacter::LookUp(const float Value)
 {
 	CHECK_DEAD()
 
 	AddControllerPitchInput(Value);
+	return SUCCESS;
 }

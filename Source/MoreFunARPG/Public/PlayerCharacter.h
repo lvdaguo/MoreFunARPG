@@ -30,7 +30,7 @@ protected:
 
 	// Action
 	UFUNCTION(BlueprintCallable)
-	int32 BeginPrimaryAttack();
+	bool BeginPrimaryAttack(int32& OutComboAnimIndex);
 
 	UFUNCTION(BlueprintCallable)
 	void EndPrimaryAttack();
@@ -48,7 +48,7 @@ protected:
 	void EndRolling();
 
 	UFUNCTION(BlueprintCallable)
-	void BeginRunning();
+	bool BeginRunning();
 
 	UFUNCTION(BlueprintCallable)
 	void EndRunning();
@@ -59,22 +59,22 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void EndOnHit();
 
-	void BeginInvincible();
+	bool BeginInvincible();
 
 	void EndInvincible();
 	
 	// Axis
 	UFUNCTION(BlueprintCallable)
-	void MoveRight(const float Value);
+	bool MoveRight(const float Value);
 
 	UFUNCTION(BlueprintCallable)
-	void MoveForward(const float Value);
+	bool MoveForward(const float Value);
 
 	UFUNCTION(BlueprintCallable)
-	void Turn(const float Value);
+	bool Turn(const float Value);
 
 	UFUNCTION(BlueprintCallable)
-	void LookUp(const float Value);
+	bool LookUp(const float Value);
 	
 	// BlueprintImplementableEvent
 	UFUNCTION(BlueprintImplementableEvent)

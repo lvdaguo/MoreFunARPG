@@ -45,19 +45,19 @@ public:
 protected:
 	// Action
 	UFUNCTION(BlueprintCallable)
-	void BeginAttack();
+	bool BeginAttack();
 
 	UFUNCTION(BlueprintCallable)
 	void EndAttack();
 
 	UFUNCTION(BlueprintCallable)
-	void BeginHealing();
+	bool BeginHealing();
 
 	UFUNCTION(BlueprintCallable)
 	void EndHealing();
 
 	UFUNCTION(BlueprintCallable)
-	void BeginRunning();
+	bool BeginRunning();
 
 	UFUNCTION(BlueprintCallable)
 	void EndRunning();

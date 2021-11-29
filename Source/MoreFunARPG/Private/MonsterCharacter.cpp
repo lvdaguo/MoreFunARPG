@@ -1,5 +1,8 @@
 #include "MonsterCharacter.h"
 
+#define SUCCESS true
+#define FAIL false
+
 AMonsterCharacter::AMonsterCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -29,24 +32,31 @@ void AMonsterCharacter::Tick(const float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void AMonsterCharacter::BeginAttack()
+bool AMonsterCharacter::BeginAttack()
 {
+
+	return SUCCESS;
 }
 
 void AMonsterCharacter::EndAttack()
 {
 }
 
-void AMonsterCharacter::BeginHealing()
+bool AMonsterCharacter::BeginHealing()
 {
+
+	return SUCCESS;
 }
 
 void AMonsterCharacter::EndHealing()
 {
+
 }
 
-void AMonsterCharacter::BeginRunning()
+bool AMonsterCharacter::BeginRunning()
 {
+
+	return SUCCESS;
 }
 
 void AMonsterCharacter::EndRunning()
