@@ -2,9 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "ARPGCharacter.h"
+#include "PlayerDataTableRow.h"
 #include "GameFramework/Character.h"
 #include "PlayerCharacter.generated.h"
-
 
 UCLASS()
 class MOREFUNARPG_API APlayerCharacter final : public AARPGCharacter
@@ -24,6 +24,9 @@ protected:
 	void SetupComponent();
 	void SetupAttachment() const;
 	void SetupComponentDefaultValues() const;
+	virtual void SetupDataFromDataTable() override;
+	void SetupComboDefaultValues();
+	void SetupStateDefaultValues();
 
 	// Action
 	UFUNCTION(BlueprintCallable)
@@ -56,6 +59,10 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void EndOnHit();
 
+	void BeginInvincible();
+
+	void EndInvincible();
+	
 	// Axis
 	UFUNCTION(BlueprintCallable)
 	void MoveRight(const float Value);
@@ -68,6 +75,13 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void LookUp(const float Value);
+	
+	// BlueprintImplementableEvent
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnInvincibleBegin();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnInvincibleEnd();
 
 	// Attribute
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attribute")
@@ -94,6 +108,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	float SwitchRunningTime = 2.0f;
 
+	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	float DefaultInvisibleTime = 2.0f;
+	
 	// Runtime Member
 	UPROPERTY(BlueprintReadOnly)
 	float CurEnergy;
@@ -102,22 +119,51 @@ protected:
 	int32 CurCombo;
 	FTimerHandle ComboResetTimerHandle;
 
+	FTimerHandle InvincibleTimerHandle;
+
 	float TargetMovingSpeed;
 	float LerpTime;
 
+	// Data From DataTable
+	TArray<struct FPlayerDataTableRow*> AllLevelData;
+	FPlayerDataTableRow* CurLevelData;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 CurExpGained;
+	
 	// States
 	bool bIsAttacking;
 	bool bIsRolling;
 	bool bIsHealing;
+	bool bIsInvincible;
+	
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsMaxRunningSpeed;
 
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsDead;
 
 	bool bIsOnHit;
+
 	bool bIsRunning;
 
 	FORCEINLINE bool CanMove() const { return (bIsAttacking || bIsHealing || bIsRolling || bIsOnHit) == false; };
 
+	// Getter
+	UFUNCTION(BlueprintCallable)
+ 	virtual int32 GetMaxHealth() const override { return CurLevelData->MaxHealth; }
+
+	virtual int32 GetDamage() const override;
+
+	UFUNCTION(BlueprintCallable)
+	int32 GetArmor() const { return CurLevelData->Armor; }
+	int32 GetNormalDamage() const { return CurLevelData->NormalDamage; }
+	int32 GetCriticalDamage() const { return CurLevelData->CriticalDamage; }
+	float GetCriticalHitRate() const { return CurLevelData->CriticalHitRate; }
+
+	UFUNCTION(BlueprintCallable)
+	int32 GetExpNeededToNextLevel() const { return CurLevelData->ExpNeededToNextLevel; }
+	
 	// Component
 	UPROPERTY(VisibleAnywhere)
 	class UStaticMeshComponent* CharacterMesh;
@@ -127,10 +173,20 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	class UCameraComponent* FollowCamera;
+	
+	// Operation
+	virtual void LevelUp() override;
+public:
+	UFUNCTION(BlueprintCallable)
+	virtual void ReceiveDamage(int32 Damage) override;
 
-	// Operation 
+protected:
+	UFUNCTION(BlueprintCallable)
+	void ReceiveExp(int32 Exp);
+	
 	void LerpSpeed(const float DeltaTime);
 	void UpdateEnergy(const float DeltaTime);
+	void InterruptExistingStates();
 
 	FORCEINLINE void ResetCombo()
 	{

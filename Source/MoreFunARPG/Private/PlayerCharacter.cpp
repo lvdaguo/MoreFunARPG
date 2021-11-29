@@ -2,6 +2,7 @@
 
 #include "Camera/CameraComponent.h"
 #include "Chaos/KinematicTargets.h"
+#include "Engine/DataTable.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 
@@ -68,25 +69,49 @@ void APlayerCharacter::SetupComponentDefaultValues() const
 	GetCharacterMovement()->bIgnoreBaseRotation = true;
 }
 
-// Life Cycle
-void APlayerCharacter::BeginPlay()
+void APlayerCharacter::SetupDataFromDataTable()
 {
-	Super::BeginPlay();
-	
-	CurEnergy = MaxEnergy;
+	check(LevelDataTable != nullptr)
 
+	AllLevelData.Empty();
+	LevelDataTable->GetAllRows(nullptr, AllLevelData);
+	CurLevelData = AllLevelData[0];
+
+	CurHealth = GetMaxHealth();
+	CurExpGained = 0;
+	MaxLevel = AllLevelData.Num();
+	CurLevel = 1;
+}
+
+void APlayerCharacter::SetupComboDefaultValues()
+{
+	CurEnergy = MaxEnergy;
 	CurCombo = 0;
 	MaxCombo = ComboDamageList.Num();
+}
 
-	TargetMovingSpeed = WalkSpeed;
-
+void APlayerCharacter::SetupStateDefaultValues()
+{
 	bIsAttacking = false;
 	bIsHealing = false;
 	bIsRolling = false;
 	bIsDead = false;
 	bIsRunning = false;
 	bIsOnHit = false;
+	bIsMaxRunningSpeed = false;
+	bIsInvincible = false;
+}
 
+// Life Cycle
+void APlayerCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	SetupComboDefaultValues();
+	SetupStateDefaultValues();
+
+	TargetMovingSpeed = WalkSpeed;
+	
 	HorizontalInput = 0.0f;
 	VerticalInput = 0.0f;
 }
@@ -102,11 +127,57 @@ void APlayerCharacter::Tick(const float DeltaTime)
 	UpdateEnergy(DeltaTime);
 }
 
-void APlayerCharacter::LerpSpeed(const float DeltaTime)
+int32 APlayerCharacter::GetDamage() const
 {
-	if (FMath::IsNearlyEqual(GetCharacterMovement()->MaxWalkSpeed, TargetMovingSpeed))
+	return 0;
+}
+
+void APlayerCharacter::LevelUp()
+{
+	if (CurLevel == MaxLevel)
 	{
 		return;
+	}
+	const int32 CurLevelIndex = CurLevel - 1;
+	CurLevelData = AllLevelData[CurLevelIndex + 1];
+	CurHealth = GetMaxHealth();
+	CurLevel++;
+}
+
+void APlayerCharacter::ReceiveDamage(const int32 Damage)
+{
+	const int32 FinalDamage = Damage - GetArmor();
+	if (FinalDamage > 0)
+	{
+		ChangeHealth(-1 * FinalDamage);
+	}
+}
+
+void APlayerCharacter::ReceiveExp(const int32 Exp)
+{
+	CurExpGained += Exp;
+	while (CurExpGained >= GetExpNeededToNextLevel())
+	{
+		if (CurLevel == MaxLevel)
+		{
+			CurExpGained = GetExpNeededToNextLevel();
+			break;
+		}
+		CurExpGained -= GetExpNeededToNextLevel();
+		LevelUp();
+	}
+}
+
+void APlayerCharacter::LerpSpeed(const float DeltaTime)
+{
+	bIsMaxRunningSpeed = false;
+	if (FMath::IsNearlyEqual(GetCharacterMovement()->MaxWalkSpeed, TargetMovingSpeed))
+	{
+		if (TargetMovingSpeed == RunningSpeed)
+		{
+			bIsMaxRunningSpeed = true;
+			return;
+		}
 	}
 	const float Alpha = LerpTime / SwitchRunningTime;
 	GetCharacterMovement()->MaxWalkSpeed = FMath::Lerp(GetCharacterMovement()->MaxWalkSpeed, TargetMovingSpeed, Alpha);
@@ -115,7 +186,7 @@ void APlayerCharacter::LerpSpeed(const float DeltaTime)
 
 void APlayerCharacter::UpdateEnergy(const float DeltaTime)
 {
-	if (bIsRunning && bIsAttacking == false && IsGettingMovementInput())
+	if (bIsRunning && bIsAttacking == false)
 	{
 		// attack can be interrupted now but is still playing the end of the attack animation
 		if (bIsRolling == false && bIsHealing == false &&
@@ -139,14 +210,36 @@ void APlayerCharacter::UpdateEnergy(const float DeltaTime)
 	}
 }
 
+void APlayerCharacter::InterruptExistingStates()
+{
+	if (bIsRunning)
+	{
+		EndRunning();
+	}
+	if (bIsHealing)
+	{
+		EndHealing();
+	}
+	if (bIsAttacking)
+	{
+		EndPrimaryAttack();
+		GetWorldTimerManager().ClearTimer(ComboResetTimerHandle);
+		ResetCombo();
+	}
+	if (bIsRolling)
+	{
+		EndRolling();
+	}
+}
+
 // Action
 void APlayerCharacter::BeginRunning()
 {
 	CHECK_DEAD()
-	// if (CanMove() == false)
-	// {
-	// 	return;
-	// }
+	if (IsGettingMovementInput() == false)
+	{
+		return;
+	}
 
 	UE_LOG(LogPlayerCharacter, Log, TEXT("OnBeginRunning"))
 	bIsRunning = true;
@@ -227,9 +320,8 @@ bool APlayerCharacter::BeginRolling()
 	}
 
 	// interrupt from other states
-	bIsHealing = false;
-	bIsAttacking = false;
-	ResetCombo();
+	InterruptExistingStates();
+	BeginInvincible();
 
 	UE_LOG(LogPlayerCharacter, Log, TEXT("OnBeginRoll"))
 	bIsRolling = true;
@@ -242,37 +334,24 @@ void APlayerCharacter::EndRolling()
 	UE_LOG(LogPlayerCharacter, Log, TEXT("OnEndRoll"))
 
 	bIsRolling = false;
+	EndInvincible();
 }
 
 bool APlayerCharacter::BeginOnHit()
 {
-	// GetMesh()->SetVectorParameterValueOnMaterials()
 	CHECK_DEAD_RETURN_BOOL()
-	if (bIsOnHit)
+	if (bIsInvincible)
 	{
 		return false;
 	}
 
-	if (bIsRunning)
-	{
-		EndRunning();
-	}
-	else if (bIsHealing)
-	{
-		EndHealing();
-	}
-	else if (bIsAttacking)
-	{
-		EndPrimaryAttack();
-		GetWorldTimerManager().ClearTimer(ComboResetTimerHandle);
-		ResetCombo();
-	}
-	else if (bIsRolling)
-	{
-		EndRolling();
-	}
-		
-
+	InterruptExistingStates();
+	BeginInvincible();
+	
+	constexpr bool Loop = false;
+	GetWorldTimerManager().SetTimer(InvincibleTimerHandle, this,
+		&APlayerCharacter::EndInvincible, DefaultInvisibleTime, Loop);
+	
 	bIsOnHit = true;
 	return true;
 }
@@ -280,6 +359,18 @@ bool APlayerCharacter::BeginOnHit()
 void APlayerCharacter::EndOnHit()
 {
 	bIsOnHit = false;
+}
+
+void APlayerCharacter::BeginInvincible()
+{
+	bIsInvincible = true;
+	OnInvincibleBegin();
+}
+
+void APlayerCharacter::EndInvincible()
+{
+	bIsInvincible = false;
+	OnInvincibleEnd();
 }
 
 // Axis

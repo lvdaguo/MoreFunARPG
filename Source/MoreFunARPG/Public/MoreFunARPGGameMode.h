@@ -5,7 +5,7 @@
 #include "MoreFunARPGGameMode.generated.h"
 
 UCLASS(minimalapi)
-class AMoreFunARPGGameMode : public AGameModeBase
+class AMoreFunARPGGameMode final : public AGameModeBase
 {
 	GENERATED_BODY()
 

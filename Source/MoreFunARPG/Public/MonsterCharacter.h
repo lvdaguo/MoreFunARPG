@@ -1,11 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Character.h"
+#include "ARPGCharacter.h"
+#include "MonsterDataTableRow.h"
 #include "MonsterCharacter.generated.h"
 
 UCLASS()
-class MOREFUNARPG_API AMonsterCharacter final : public ACharacter
+class MOREFUNARPG_API AMonsterCharacter final : public AARPGCharacter
 {
 	GENERATED_BODY()
 
@@ -13,18 +14,35 @@ class MOREFUNARPG_API AMonsterCharacter final : public ACharacter
 public:
 	AMonsterCharacter();
 
+	// Setup Default
+	virtual void SetupDataFromDataTable() override;
+	
 	// Life Cycle
-private:
+protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
 	// Attribute
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	float MoveSpeed;
+	TArray<class USkeletalMesh*> RandomMeshPool; 
+	
+	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	float PatrolSpeed = 400.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	int32 AttackDamage;
+	float ChaseSpeed = 800.0f;
+
+	// Data From DataTable
+	TArray<struct FMonsterDataTableRow*> AllLevelData;
+	FMonsterDataTableRow* CurLevelData;
+
+public:
+	// Getter
+	FORCEINLINE virtual int32 GetMaxHealth() const override { return CurLevelData->MaxHealth; }
+	FORCEINLINE virtual int32 GetDamage() const override { return CurLevelData->Damage; }
+	FORCEINLINE int32 GetExpWorth() const { return CurLevelData->ExpWorth; }
 	
+protected:
 	// Action
 	UFUNCTION(BlueprintCallable)
 	void BeginAttack();

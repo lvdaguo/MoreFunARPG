@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ARPGDataTableRow.h"
 #include "GameFramework/Character.h"
 #include "ARPGCharacter.generated.h"
 
@@ -17,6 +16,9 @@ public:
 	AARPGCharacter();
 
 protected:
+	// Setup Default
+	virtual void SetupDataFromDataTable() { };
+	
 	// Life Cycle
 	virtual void BeginPlay() override;
 
@@ -24,58 +26,30 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	class UDataTable* LevelDataTable;
 
-	TArray<struct FARPGDataTableRow*> AllLevelData;
-
-	struct FARPGDataTableRow* CurLevelData;
-
 	// Level Attribute
 	UPROPERTY(BlueprintReadOnly)
-	int32 CurExpGained;
-	
 	int32 MaxLevel;
 
 	// Health Attribute
 	UPROPERTY(BlueprintReadOnly)
 	int32 CurHealth;
 
+	UPROPERTY(BlueprintReadOnly)
+	int32 CurLevel;
+
 	// Operation
-	void LevelUp();
+	virtual void LevelUp() { }
 	void ChangeHealth(int32 Diff);
-
+	
 public:
-	UFUNCTION(BlueprintCallable)
-	void ReceiveExp(int32 Exp);
-
-	UFUNCTION(BlueprintCallable)
-	void ReceiveDamage(int32 Damage);
+	virtual void ReceiveDamage(int32 Damage);
 
 	UFUNCTION(BlueprintCallable)
 	void ReceiveHeal(int32 Heal);
-	
+
 	// Getter
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE int32 GetCurLevel() const { return CurLevelData->Level; }
-	
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE int32 GetExpWorth() const { return CurLevelData->ExpWorth; }
-	
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE int32 GetExpNeededToNextLevel() const { return CurLevelData->ExpNeededToNextLevel; }
-	
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE int32 GetMaxHealth() const { return CurLevelData->MaxHealth; }
-	
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE int32 GetArmor() const { return CurLevelData->Armor; }
-	
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE int32 GetNormalDamage() const { return CurLevelData->NormalDamage; }
-	
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE int32 GetCriticalDamage() const { return CurLevelData->CriticalDamage; }
-	
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE float GetCriticalHitRate() const { return CurLevelData->CriticalHitRate; }
+	virtual int32 GetMaxHealth() const { return 0; }
+	virtual int32 GetDamage() const { return 0; }
 
 	// Event / Delegate
 	FORCEINLINE FHealthChange& HealthChangeEvent() { return HealthChange; }
