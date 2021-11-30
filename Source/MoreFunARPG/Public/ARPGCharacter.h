@@ -6,6 +6,17 @@
 
 DECLARE_EVENT_TwoParams(AARPGCharacter, FHealthChange, int32, int32)
 
+// Self Define Macro
+#define SUCCESS true
+#define FAIL false
+#define CHECK_DEAD() \
+{ \
+	if (bIsDead) \
+	{ \
+	return FAIL; \
+	} \
+}
+
 UCLASS()
 class MOREFUNARPG_API AARPGCharacter : public ACharacter
 {
@@ -17,7 +28,8 @@ public:
 
 protected:
 	// Setup Default
-	virtual void SetupDataFromDataTable() { };
+	virtual void SetupDataFromDataTable() { }
+	virtual void SetupStateDefaultValues();
 	
 	// Life Cycle
 	virtual void BeginPlay() override;
@@ -37,9 +49,16 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	int32 CurLevel;
 
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsDead;
+
 	// Operation
-	virtual void LevelUp() { }
-	void ChangeHealth(int32 Diff);
+	void ChangeHealthSafe(int32 Diff);
+	virtual void Die();
+
+	// Collision
+	UFUNCTION(BlueprintCallable)
+	void OnWeaponOverlap(AActor* OtherActor);
 	
 public:
 	virtual void ReceiveDamage(int32 Damage);

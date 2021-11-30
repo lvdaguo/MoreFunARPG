@@ -8,7 +8,21 @@ public class MoreFunARPG : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 		PublicDependencyModuleNames.AddRange(new[]
-			{ "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay" });
-		PrivateDependencyModuleNames.AddRange(new string[] { });
+		{
+			"Core",
+			"CoreUObject",
+			"Engine",
+			"InputCore",
+			"HeadMountedDisplay",
+			"UMG"
+		});
+
+		// PrivateDependencyModuleNames.AddRange(new string[] { });
+
+		PrivateDependencyModuleNames.AddRange(new[]
+		{
+			"Slate",
+			"SlateCore"
+		});
 	}
 }

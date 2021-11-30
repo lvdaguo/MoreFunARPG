@@ -1,21 +1,12 @@
 #include "PlayerCharacter.h"
 
+#include "MonsterCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "Chaos/KinematicTargets.h"
+#include "Components/ShapeComponent.h"
 #include "Engine/DataTable.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
-
-// Self Define Macro
-#define SUCCESS true
-#define FAIL false
-#define CHECK_DEAD() \
-{ \
-	if (bIsDead) \
-	{ \
-		return FAIL; \
-	} \
-}
 
 DEFINE_LOG_CATEGORY_STATIC(LogPlayerCharacter, Log, All)
 
@@ -59,7 +50,6 @@ void APlayerCharacter::SetupDataFromDataTable()
 {
 	check(LevelDataTable != nullptr)
 
-	AllLevelData.Empty();
 	LevelDataTable->GetAllRows(nullptr, AllLevelData);
 	CurLevelData = AllLevelData[0];
 
@@ -81,7 +71,6 @@ void APlayerCharacter::SetupStateDefaultValues()
 	bIsAttacking = false;
 	bIsHealing = false;
 	bIsRolling = false;
-	bIsDead = false;
 	bIsRunning = false;
 	bIsOnHit = false;
 	bIsMaxRunningSpeed = false;
@@ -94,7 +83,6 @@ void APlayerCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	SetupComboDefaultValues();
-	SetupStateDefaultValues();
 
 	TargetMovingSpeed = WalkSpeed;
 	
@@ -115,7 +103,7 @@ void APlayerCharacter::Tick(const float DeltaTime)
 
 int32 APlayerCharacter::GetDamage() const
 {
-	return 0;
+	return GetNormalDamage();
 }
 
 void APlayerCharacter::LevelUp()
@@ -132,10 +120,16 @@ void APlayerCharacter::LevelUp()
 
 void APlayerCharacter::ReceiveDamage(const int32 Damage)
 {
+	if (Damage <= 0 || bIsInvincible)
+	{
+		return;
+	}
+
 	const int32 FinalDamage = Damage - GetArmor();
 	if (FinalDamage > 0)
 	{
-		ChangeHealth(-1 * FinalDamage);
+		ChangeHealthSafe(-1 * FinalDamage);
+		OnHit();
 	}
 }
 
@@ -329,10 +323,6 @@ void APlayerCharacter::EndRolling()
 bool APlayerCharacter::BeginOnHit()
 {
 	CHECK_DEAD()
-	if (bIsInvincible)
-	{
-		return FAIL;
-	}
 
 	InterruptExistingStates();
 	BeginInvincible();
@@ -362,6 +352,16 @@ void APlayerCharacter::EndInvincible()
 {
 	bIsInvincible = false;
 	OnInvincibleEnd();
+}
+
+void APlayerCharacter::OnAttackEnabled(UPrimitiveComponent* WeaponHitBox)
+{
+	WeaponHitBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+}
+
+void APlayerCharacter::OnAttackDisabled(UPrimitiveComponent* WeaponHitBox)
+{
+	WeaponHitBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 // Axis

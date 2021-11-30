@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "ARPGCharacter.h"
 #include "PlayerDataTableRow.h"
+#include "Camera/CameraComponent.h"
 #include "GameFramework/Character.h"
 #include "PlayerCharacter.generated.h"
 
@@ -26,7 +27,7 @@ protected:
 	void SetupComponentDefaultValues() const;
 	virtual void SetupDataFromDataTable() override;
 	void SetupComboDefaultValues();
-	void SetupStateDefaultValues();
+	virtual void SetupStateDefaultValues() override;
 
 	// Action
 	UFUNCTION(BlueprintCallable)
@@ -62,6 +63,22 @@ protected:
 	bool BeginInvincible();
 
 	void EndInvincible();
+
+	UFUNCTION(BlueprintCallable)
+	void OnAttackEnabled(class UPrimitiveComponent* WeaponHitBox);
+
+	UFUNCTION(BlueprintCallable)
+	void OnAttackDisabled(class UPrimitiveComponent* WeaponHitBox);
+
+	// BlueprintImplementableEvent
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnInvincibleBegin();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnInvincibleEnd();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnHit();
 	
 	// Axis
 	UFUNCTION(BlueprintCallable)
@@ -76,13 +93,6 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	bool LookUp(const float Value);
 	
-	// BlueprintImplementableEvent
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnInvincibleBegin();
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnInvincibleEnd();
-
 	// Attribute
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attribute")
 	float MaxEnergy = 100.0f;
@@ -126,7 +136,7 @@ protected:
 
 	// Data From DataTable
 	TArray<struct FPlayerDataTableRow*> AllLevelData;
-	FPlayerDataTableRow* CurLevelData;
+	struct FPlayerDataTableRow* CurLevelData;
 
 	UPROPERTY(BlueprintReadOnly)
 	int32 CurExpGained;
@@ -139,9 +149,6 @@ protected:
 	
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsMaxRunningSpeed;
-
-	UPROPERTY(BlueprintReadOnly)
-	bool bIsDead;
 
 	bool bIsOnHit;
 
@@ -163,7 +170,12 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	int32 GetExpNeededToNextLevel() const { return CurLevelData->ExpNeededToNextLevel; }
-	
+
+public:
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE FVector GetCameraWorldLocation() const { return FollowCamera->GetComponentLocation(); }
+
+protected:
 	// Component
 	UPROPERTY(VisibleAnywhere)
 	class UStaticMeshComponent* CharacterMesh;
@@ -175,7 +187,7 @@ protected:
 	class UCameraComponent* FollowCamera;
 	
 	// Operation
-	virtual void LevelUp() override;
+	void LevelUp();
 public:
 	UFUNCTION(BlueprintCallable)
 	virtual void ReceiveDamage(int32 Damage) override;
@@ -188,15 +200,10 @@ protected:
 	void UpdateEnergy(const float DeltaTime);
 	void InterruptExistingStates();
 
-	FORCEINLINE void ResetCombo()
-	{
-		UE_LOG(LogTemp, Log, TEXT("Combo reset!"))
-		CurCombo = 0;
-	}
+	FORCEINLINE void ResetCombo() { CurCombo = 0; }
 
 	FORCEINLINE void NextCombo() { CurCombo = (CurCombo + 1) % MaxCombo; }
-
-
+	
 	float HorizontalInput;
 	float VerticalInput;
 
