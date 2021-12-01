@@ -47,6 +47,7 @@ void AARPGCharacter::Die()
 {
 	SetActorEnableCollision(false);
 	bIsDead = true;
+	UnPossessed();
 }
 
 void AARPGCharacter::OnWeaponOverlap(AActor* OtherActor)

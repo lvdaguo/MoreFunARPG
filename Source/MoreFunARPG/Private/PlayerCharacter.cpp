@@ -86,7 +86,6 @@ void APlayerCharacter::BeginPlay()
 
 	TargetMovingSpeed = WalkSpeed;
 	
-	HorizontalInput = 0.0f;
 	VerticalInput = 0.0f;
 }
 
@@ -96,6 +95,11 @@ void APlayerCharacter::Tick(const float DeltaTime)
 
 	// UE_LOG(LogTemp, Log, TEXT("PlayerStatus: %f, %f, running %d %d"),
 	// 	GetCharacterMovement()->MaxWalkSpeed, CurEnergy, bIsRunning, MaxEnergy)
+
+	if (bIsRunning && IsMovingForward() == false)
+	{
+		EndRunning();
+	}
 	
 	LerpSpeed(DeltaTime);
 	UpdateEnergy(DeltaTime);
@@ -129,7 +133,17 @@ void APlayerCharacter::ReceiveDamage(const int32 Damage)
 	if (FinalDamage > 0)
 	{
 		ChangeHealthSafe(-1 * FinalDamage);
-		OnHit();
+		// if doing attacking action
+		// the damage still exists but the on hit wont be played
+		// means that attacking action wont be interrupted 
+		if (bIsAttacking == false)
+		{
+			OnHit();
+		}
+		BeginInvincible();
+		constexpr bool Loop = false;
+		GetWorldTimerManager().SetTimer(InvincibleTimerHandle, this,
+			&APlayerCharacter::EndInvincible, DefaultInvisibleTime, Loop);
 	}
 }
 
@@ -156,8 +170,8 @@ void APlayerCharacter::LerpSpeed(const float DeltaTime)
 		if (TargetMovingSpeed == RunningSpeed)
 		{
 			bIsMaxRunningSpeed = true;
-			return;
 		}
+		return;
 	}
 	const float Alpha = LerpTime / SwitchRunningTime;
 	GetCharacterMovement()->MaxWalkSpeed = FMath::Lerp(GetCharacterMovement()->MaxWalkSpeed, TargetMovingSpeed, Alpha);
@@ -216,11 +230,11 @@ void APlayerCharacter::InterruptExistingStates()
 bool APlayerCharacter::BeginRunning()
 {
 	CHECK_DEAD()
-	if (IsGettingMovementInput() == false)
+	if (IsMovingForward() == false)
 	{
 		return FAIL;
 	}
-
+	
 	UE_LOG(LogPlayerCharacter, Log, TEXT("OnBeginRunning"))
 	bIsRunning = true;
 	TargetMovingSpeed = RunningSpeed;
@@ -325,11 +339,6 @@ bool APlayerCharacter::BeginOnHit()
 	CHECK_DEAD()
 
 	InterruptExistingStates();
-	BeginInvincible();
-	
-	constexpr bool Loop = false;
-	GetWorldTimerManager().SetTimer(InvincibleTimerHandle, this,
-		&APlayerCharacter::EndInvincible, DefaultInvisibleTime, Loop);
 	
 	bIsOnHit = true;
 	return SUCCESS;
@@ -386,7 +395,6 @@ bool APlayerCharacter::MoveRight(const float Value)
 {
 	CHECK_DEAD()
 	
-	HorizontalInput = Value;
 	if (Controller != nullptr && Value != 0.0f)
 	{
 		const FRotator Rotation = Controller->GetControlRotation();

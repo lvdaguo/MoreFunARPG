@@ -79,7 +79,7 @@ protected:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnHit();
-	
+
 	// Axis
 	UFUNCTION(BlueprintCallable)
 	bool MoveRight(const float Value);
@@ -92,7 +92,7 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	bool LookUp(const float Value);
-	
+
 	// Attribute
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attribute")
 	float MaxEnergy = 100.0f;
@@ -120,7 +120,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	float DefaultInvisibleTime = 2.0f;
-	
+
+	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	float HalfRunningAngle = 60.0f;
+
 	// Runtime Member
 	UPROPERTY(BlueprintReadOnly)
 	float CurEnergy;
@@ -140,13 +143,13 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly)
 	int32 CurExpGained;
-	
+
 	// States
 	bool bIsAttacking;
 	bool bIsRolling;
 	bool bIsHealing;
 	bool bIsInvincible;
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsMaxRunningSpeed;
 
@@ -158,12 +161,13 @@ protected:
 
 	// Getter
 	UFUNCTION(BlueprintCallable)
- 	virtual int32 GetMaxHealth() const override { return CurLevelData->MaxHealth; }
+	virtual int32 GetMaxHealth() const override { return CurLevelData->MaxHealth; }
 
 	virtual int32 GetDamage() const override;
 
 	UFUNCTION(BlueprintCallable)
 	int32 GetArmor() const { return CurLevelData->Armor; }
+
 	int32 GetNormalDamage() const { return CurLevelData->NormalDamage; }
 	int32 GetCriticalDamage() const { return CurLevelData->CriticalDamage; }
 	float GetCriticalHitRate() const { return CurLevelData->CriticalHitRate; }
@@ -185,7 +189,7 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	class UCameraComponent* FollowCamera;
-	
+
 	// Operation
 	void LevelUp();
 public:
@@ -195,7 +199,7 @@ public:
 protected:
 	UFUNCTION(BlueprintCallable)
 	void ReceiveExp(int32 Exp);
-	
+
 	void LerpSpeed(const float DeltaTime);
 	void UpdateEnergy(const float DeltaTime);
 	void InterruptExistingStates();
@@ -203,13 +207,15 @@ protected:
 	FORCEINLINE void ResetCombo() { CurCombo = 0; }
 
 	FORCEINLINE void NextCombo() { CurCombo = (CurCombo + 1) % MaxCombo; }
-	
-	float HorizontalInput;
+
 	float VerticalInput;
 
-	FORCEINLINE bool IsGettingMovementInput() const
+	FORCEINLINE bool IsMovingForward() const
 	{
-		return FMath::IsNearlyZero(HorizontalInput) == false
-			|| FMath::IsNearlyZero(VerticalInput) == false;
+		FVector MovingDirection = GetVelocity();
+		MovingDirection.Z = 0.0f;
+		MovingDirection.Normalize();
+		return FVector::DotProduct(MovingDirection, GetActorForwardVector())
+			> FMath::Cos(HalfRunningAngle / 180.0f * PI);
 	}
 };

@@ -16,7 +16,7 @@ AMonsterCharacter::AMonsterCharacter()
 	HealthBar->SetupAttachment(HealthBarTransform);
 
 	const FVector Location(0.0f, 0.0f, 80.0f);
-	const FRotator Rotation(0.0f, 90.0f, 0.0f);
+	const FRotator Rotation(0.0f, 0.0f, 0.0f);
 	HealthBarTransform->SetWorldLocationAndRotation(Location, Rotation);
 
 	HealthBar->SetWorldScale3D(FVector(1.0f, 0.2f, 0.2f));
@@ -53,6 +53,9 @@ void AMonsterCharacter::BeginPlay()
 	GetMesh()->SetSkeletalMesh(RandomMeshPool[Index]);
 
 	PlayerCharacter = Cast<APlayerCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
+
+	TargetMovingSpeed = PatrolSpeed;
+	GetCharacterMovement()->MaxWalkSpeed = TargetMovingSpeed;
 }
 
 void AMonsterCharacter::BarFacingPlayer() const
