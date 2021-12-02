@@ -97,6 +97,7 @@ void AMonsterCharacter::LerpSpeed(const float DeltaTime)
 		return;
 	}
 	const float Alpha = LerpTime / SwitchRunningTime;
+
 	GetCharacterMovement()->MaxWalkSpeed = FMath::Lerp(GetCharacterMovement()->MaxWalkSpeed, TargetMovingSpeed, Alpha);
 	LerpTime += DeltaTime;
 }

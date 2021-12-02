@@ -45,11 +45,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	float DefaultInvisibleTime = 2.0f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attribute")
+	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	int32 HealPotion = 1;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	int32 HealAmount = 50;
+
+	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	float LowHealthPercent = 0.4f;
 	
 	float LerpTime;
 	float TargetMovingSpeed;
@@ -83,7 +86,10 @@ public:
 	// Getter
 	UFUNCTION(BlueprintCallable)
 	virtual int32 GetMaxHealth() const override { return CurLevelData->MaxHealth; }
-
+	FORCEINLINE int32 GetCurHealth() const { return CurHealth; }
+ 	FORCEINLINE float GetLowHealthPercent() const { return LowHealthPercent; } 
+	FORCEINLINE int32 GetHealthPotion() const { return HealPotion; }
+	
 protected:
 	FORCEINLINE virtual int32 GetCalculatedDamage() const override { return CurLevelData->Damage; }
 	FORCEINLINE int32 GetExpWorth() const { return CurLevelData->ExpWorth; }

@@ -12,7 +12,7 @@ class MOREFUNARPG_API APlayerCharacterController final : public APlayerControlle
 protected:
 	UPROPERTY()
 	class APlayerCharacter* PlayerCharacter;
-	
+
 	virtual void BeginPlay() override; 
 
 	virtual void SetupInputComponent() override;
