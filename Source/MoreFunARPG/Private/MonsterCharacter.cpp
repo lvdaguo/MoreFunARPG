@@ -183,6 +183,7 @@ void AMonsterCharacter::EndInvincible()
 void AMonsterCharacter::Die()
 {
 	Super::Die();
+	StopAnimMontage();
 	HealthBar->SetVisibility(false);
 }
 
@@ -195,6 +196,9 @@ void AMonsterCharacter::ReceiveDamage(const int32 Damage)
 	if (Damage > 0)
 	{
 		ChangeHealthSafe(-1 * Damage);
-		OnHit();
+		if (bIsDead == false)
+		{
+			OnHit();
+		}
 	}
 }

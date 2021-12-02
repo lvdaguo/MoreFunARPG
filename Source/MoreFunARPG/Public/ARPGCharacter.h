@@ -13,7 +13,7 @@ DECLARE_EVENT_TwoParams(AARPGCharacter, FHealthChange, int32, int32)
 { \
 	if (bIsDead) \
 	{ \
-	return FAIL; \
+		return FAIL; \
 	} \
 }
 
