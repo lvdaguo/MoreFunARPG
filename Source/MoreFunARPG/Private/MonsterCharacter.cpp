@@ -179,11 +179,6 @@ bool AMonsterCharacter::BeginOnHit()
 	}
 	InterruptExistingStates();
 	bIsOnHit = true;
-	BeginInvincible();
-
-	constexpr bool Loop = false;
-	GetWorldTimerManager().SetTimer(InvincibleTimerHandle, this,
-		&AMonsterCharacter::EndInvincible, DefaultInvisibleTime, Loop);
 	
 	return SUCCESS;
 }
@@ -216,6 +211,16 @@ void AMonsterCharacter::EndInvincible()
 		return;
 	}
 	bIsInvincible = false;
+}
+
+void AMonsterCharacter::EnableWeapon(UPrimitiveComponent* WeaponHitBox)
+{
+	WeaponHitBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+}
+
+void AMonsterCharacter::DisableWeapon(UPrimitiveComponent* WeaponHitBox)
+{
+	WeaponHitBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void AMonsterCharacter::Die()

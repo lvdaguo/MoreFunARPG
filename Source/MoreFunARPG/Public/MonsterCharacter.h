@@ -42,8 +42,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	float SwitchRunningTime = 2.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	float DefaultInvisibleTime = 2.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attribute")
+	float DefaultInvincibleTime = 0.8f;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	int32 HealPotion = 1;
@@ -119,10 +119,18 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void EndOnHit();
 
+	UFUNCTION(BlueprintCallable)
 	bool BeginInvincible();
 
+	UFUNCTION(BlueprintCallable)
 	void EndInvincible();
 
+	UFUNCTION(BlueprintCallable)
+	void EnableWeapon(class UPrimitiveComponent* WeaponHitBox);
+
+	UFUNCTION(BlueprintCallable)
+	void DisableWeapon(class UPrimitiveComponent* WeaponHitBox);
+	
 	// Blueprint Implementable
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnHit();

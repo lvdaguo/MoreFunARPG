@@ -156,8 +156,6 @@ protected:
 	int32 CurCombo;
 	FTimerHandle ComboResetTimerHandle;
 
-	FTimerHandle InvincibleTimerHandle;
-
 	float TargetMovingSpeed;
 	float LerpTime;
 
