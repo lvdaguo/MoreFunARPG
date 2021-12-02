@@ -37,7 +37,7 @@ protected:
 	// Data Table
 	UPROPERTY(EditDefaultsOnly)
 	class UDataTable* LevelDataTable;
-
+	
 	// Level Attribute
 	UPROPERTY(BlueprintReadOnly)
 	int32 MaxLevel;
@@ -62,12 +62,11 @@ protected:
 	void OnWeaponOverlap(AActor* OtherActor);
 	
 	virtual void ReceiveDamage(int32 Damage);
-public:
-	UFUNCTION(BlueprintCallable)
-	void ReceiveHeal(int32 Heal);
 
+public:
 	// Getter
 	virtual int32 GetMaxHealth() const { return 0; }
+
 protected:
 	virtual int32 GetCalculatedDamage() const { return 0; }
 

@@ -191,7 +191,7 @@ int32 APlayerCharacter::GetCalculatedDamage() const
 
 void APlayerCharacter::ReceiveDamage(const int32 Damage)
 {
-	if (Damage <= 0 || bIsInvincible || bIsDead)
+	if (Damage <= 0 || bIsInvincible)
 	{
 		return;
 	}
@@ -205,6 +205,12 @@ void APlayerCharacter::ReceiveDamage(const int32 Damage)
 			OnHit();
 		}
 	}
+}
+
+void APlayerCharacter::ReceiveHeal()
+{
+	HealLeft--;
+	ChangeHealthSafe(HealAmount);
 }
 
 // Action Blueprint Implementation Helper
@@ -275,11 +281,10 @@ void APlayerCharacter::EndPrimaryAttack()
 
 bool APlayerCharacter::BeginHealing()
 {
-	if (CanAct() == false)
+	if (CanAct() == false || HealLeft <= 0)
 	{
 		return FAIL;
 	}
-
 	UE_LOG(LogPlayerCharacter, Log, TEXT("OnBeginHealing"))
 	bIsHealing = true;
 

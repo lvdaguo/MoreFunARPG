@@ -12,6 +12,9 @@ class MOREFUNARPG_API AMonsterCharacter final : public AARPGCharacter
 
 	// Constructor
 public:
+	void SetupComponent();
+	void SetupAttachment() const;
+	void SetupComponentDefaultValues() const;
 	AMonsterCharacter();
 
 	// Setup Default
@@ -42,6 +45,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	float DefaultInvisibleTime = 2.0f;
 
+	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	int32 HealLeft = 1;
+
+	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	int32 HealAmount = 50;
+	
 	float LerpTime;
 	float TargetMovingSpeed;
 	
@@ -53,7 +62,7 @@ protected:
 	bool bIsAttacking;
 	FTimerHandle InvincibleTimerHandle;
 
-	FORCEINLINE bool CanMove() const { return bIsAttacking || bIsHealing || bIsOnHit; }
+	FORCEINLINE bool CanAct() const { return (bIsAttacking || bIsHealing || bIsOnHit) == false; }
 	void InterruptExistingStates();
 
 	// Data From DataTable
@@ -75,10 +84,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual int32 GetMaxHealth() const override { return CurLevelData->MaxHealth; }
 
+protected:
 	FORCEINLINE virtual int32 GetCalculatedDamage() const override { return CurLevelData->Damage; }
 	FORCEINLINE int32 GetExpWorth() const { return CurLevelData->ExpWorth; }
 	
-protected:
 	// Action
 	UFUNCTION(BlueprintCallable)
 	bool BeginAttack();
@@ -113,9 +122,10 @@ protected:
 	void OnHit();
 	
 	// Operation
-public:
 	virtual void Die() override;
 
+	UFUNCTION(BlueprintCallable)
+	void ReceiveHeal();
 
 	UFUNCTION(BlueprintCallable)
 	virtual void ReceiveDamage(int32 Damage) override;

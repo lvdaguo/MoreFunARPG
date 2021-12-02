@@ -28,11 +28,6 @@ void AARPGCharacter::ReceiveDamage(const int32 Damage)
 	}
 }
 
-void AARPGCharacter::ReceiveHeal(const int32 Heal)
-{
-	ChangeHealthSafe(Heal);
-}
-
 void AARPGCharacter::ChangeHealthSafe(const int32 Diff)
 {
 	const int32 OriginHealth = CurHealth;

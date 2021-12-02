@@ -5,16 +5,20 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 
-AMonsterCharacter::AMonsterCharacter()
+void AMonsterCharacter::SetupComponent()
 {
-	PrimaryActorTick.bCanEverTick = true;
-
 	HealthBarTransform = CreateDefaultSubobject<USceneComponent>(TEXT("HealthBarTransform"));
 	HealthBar = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBar"));
-	
+}
+
+void AMonsterCharacter::SetupAttachment() const
+{
 	HealthBarTransform->SetupAttachment(RootComponent);
 	HealthBar->SetupAttachment(HealthBarTransform);
+}
 
+void AMonsterCharacter::SetupComponentDefaultValues() const
+{
 	const FVector Location(0.0f, 0.0f, 80.0f);
 	const FRotator Rotation(0.0f, 0.0f, 0.0f);
 	HealthBarTransform->SetWorldLocationAndRotation(Location, Rotation);
@@ -23,13 +27,22 @@ AMonsterCharacter::AMonsterCharacter()
 	HealthBar->SetWidgetSpace(EWidgetSpace::World);
 }
 
+AMonsterCharacter::AMonsterCharacter()
+{
+	PrimaryActorTick.bCanEverTick = true;
+
+	SetupComponent();
+	SetupAttachment();
+	SetupComponentDefaultValues();
+}
+
 void AMonsterCharacter::SetupDataFromDataTable()
 {
 	check(LevelDataTable != nullptr)
 
 	LevelDataTable->GetAllRows(nullptr, AllLevelData);
 	MaxLevel = AllLevelData.Num();
-	SetupByLevel(1);
+	CurLevelData = nullptr;
 }
 
 void AMonsterCharacter::SetupByLevel(const int32 Level)
@@ -42,18 +55,29 @@ void AMonsterCharacter::SetupByLevel(const int32 Level)
 
 void AMonsterCharacter::SetupStateDefaultValues()
 {
+	Super::SetupStateDefaultValues();
 	bIsInvincible = false;
 	bIsOnHit = false;
+	bIsHealing = false;
+	bIsAttacking = false;
+	bIsRunning = false;
 }
 
 void AMonsterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (CurLevelData == nullptr)
+	{
+		SetupByLevel(1);
+	}
+	
 	const int32 Index = FMath::RandHelper(RandomMeshPool.Num());
 	GetMesh()->SetSkeletalMesh(RandomMeshPool[Index]);
 
 	PlayerCharacter = Cast<APlayerCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
-
+	check(PlayerCharacter != nullptr)
+	
 	TargetMovingSpeed = PatrolSpeed;
 	GetCharacterMovement()->MaxWalkSpeed = TargetMovingSpeed;
 }
@@ -81,11 +105,6 @@ void AMonsterCharacter::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (bIsDead)
-	{
-		return;
-	}
-	
 	BarFacingPlayer();
 	LerpSpeed(DeltaTime);
 }
@@ -99,6 +118,10 @@ void AMonsterCharacter::InterruptExistingStates()
 
 bool AMonsterCharacter::BeginAttack()
 {
+	if (CanAct() == false)
+	{
+		return FAIL;
+	}
 	bIsAttacking = true;
 
 	return SUCCESS;
@@ -106,12 +129,16 @@ bool AMonsterCharacter::BeginAttack()
 
 void AMonsterCharacter::EndAttack()
 {
+	if (bIsAttacking == false)
+	{
+		return;
+	}
 	bIsAttacking = false;
 }
 
 bool AMonsterCharacter::BeginHealing()
 {
-	if (CanMove() == false)
+	if (CanAct() == false || HealLeft <= 0)
 	{
 		return FAIL;
 	}
@@ -145,8 +172,10 @@ void AMonsterCharacter::EndRunning()
 
 bool AMonsterCharacter::BeginOnHit()
 {
-	// CHECK_DEAD()
-	
+	if (bIsOnHit)
+	{
+		return FAIL;
+	}
 	InterruptExistingStates();
 	bIsOnHit = true;
 	BeginInvincible();
@@ -160,11 +189,20 @@ bool AMonsterCharacter::BeginOnHit()
 
 void AMonsterCharacter::EndOnHit()
 {
+	if (bIsOnHit == false)
+	{
+		return;
+	}
 	bIsOnHit = false;
 }
 
 bool AMonsterCharacter::BeginInvincible()
 {
+	if (bIsInvincible)
+	{
+		return FAIL;
+	}
+	
 	bIsInvincible = true;
 
 	return SUCCESS;
@@ -172,6 +210,10 @@ bool AMonsterCharacter::BeginInvincible()
 
 void AMonsterCharacter::EndInvincible()
 {
+	if (bIsInvincible == false)
+	{
+		return;
+	}
 	bIsInvincible = false;
 }
 
@@ -179,6 +221,12 @@ void AMonsterCharacter::Die()
 {
 	Super::Die();
 	HealthBar->SetVisibility(false);
+}
+
+void AMonsterCharacter::ReceiveHeal()
+{
+	HealLeft--;
+	ChangeHealthSafe(HealAmount);
 }
 
 void AMonsterCharacter::ReceiveDamage(const int32 Damage)

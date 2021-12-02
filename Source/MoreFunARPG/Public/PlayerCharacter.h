@@ -141,6 +141,12 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	float RollEnergyCost = 10.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	int32 HealLeft = 1;
+
+	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	int32 HealAmount = 50;
 	
 	// Runtime Member
 	UPROPERTY(BlueprintReadOnly)
@@ -230,11 +236,13 @@ protected:
 
 	// Operation
 	void LevelUp();
-public:
+	
 	UFUNCTION(BlueprintCallable)
 	virtual void ReceiveDamage(int32 Damage) override;
 
-protected:
+	UFUNCTION(BlueprintCallable)
+	void ReceiveHeal();
+
 	UFUNCTION(BlueprintCallable)
 	void ReceiveExp(int32 Exp);
 
