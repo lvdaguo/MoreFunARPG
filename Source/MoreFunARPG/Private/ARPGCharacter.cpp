@@ -14,6 +14,8 @@ void AARPGCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	HealthChangeEvent().AddUObject(this, &AARPGCharacter::OnHealthChange);
+
 	SetupStateDefaultValues();
 	SetupDataFromDataTable();
 }
@@ -35,19 +37,28 @@ void AARPGCharacter::ChangeHealthSafe(const int32 Diff)
 {
 	const int32 OriginHealth = CurHealth;
 	CurHealth = FMath::Clamp(CurHealth + Diff, 0, GetMaxHealth());
-	if (bIsDead == false && CurHealth == 0)
+	HealthChange.Broadcast(OriginHealth, CurHealth);
+}
+
+void AARPGCharacter::OnHealthChange(const int32 Before, const int32 After)
+{
+	UE_LOG(LogTemp, Log, TEXT("HP Bef %d Aft %d"), Before, After)
+	if (Before != 0 && After == 0)
 	{
 		Die();
 	}
-	UE_LOG(LogTemp, Log, TEXT("HP Bef %d Aft %d"), OriginHealth, CurHealth)
-	HealthChange.Broadcast(OriginHealth, CurHealth);
 }
 
 void AARPGCharacter::Die()
 {
+	if (bIsDead)
+	{
+		return;
+	}
 	SetActorEnableCollision(false);
 	bIsDead = true;
-	UnPossessed();
+	StopAnimMontage();
+	GetController()->UnPossess();
 }
 
 void AARPGCharacter::OnWeaponOverlap(AActor* OtherActor)
@@ -55,7 +66,7 @@ void AARPGCharacter::OnWeaponOverlap(AActor* OtherActor)
 	AARPGCharacter* OtherCharacter = Cast<AARPGCharacter>(OtherActor);
 	if (OtherCharacter != nullptr && OtherCharacter != this)
 	{
-		const int32 CalculatedDamage = GetDamage();
+		const int32 CalculatedDamage = GetCalculatedDamage();
 		OtherCharacter->ReceiveDamage(CalculatedDamage);
 	}
 }

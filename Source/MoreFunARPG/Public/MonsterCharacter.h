@@ -75,7 +75,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual int32 GetMaxHealth() const override { return CurLevelData->MaxHealth; }
 
-	FORCEINLINE virtual int32 GetDamage() const override { return CurLevelData->Damage; }
+	FORCEINLINE virtual int32 GetCalculatedDamage() const override { return CurLevelData->Damage; }
 	FORCEINLINE int32 GetExpWorth() const { return CurLevelData->ExpWorth; }
 	
 protected:

@@ -92,18 +92,9 @@ void AMonsterCharacter::Tick(const float DeltaTime)
 
 void AMonsterCharacter::InterruptExistingStates()
 {
-	if (bIsRunning)
-	{
-		EndRunning();
-	}
-	if (bIsHealing)
-	{
-		EndHealing();
-	}
-	if (bIsAttacking)
-	{
-		EndAttack();
-	}
+	EndRunning();
+	EndHealing();
+	EndAttack();
 }
 
 bool AMonsterCharacter::BeginAttack()
@@ -120,24 +111,28 @@ void AMonsterCharacter::EndAttack()
 
 bool AMonsterCharacter::BeginHealing()
 {
+	if (CanMove() == false)
+	{
+		return FAIL;
+	}
 	bIsHealing = true;
-	
 	return SUCCESS;
 }
 
 void AMonsterCharacter::EndHealing()
 {
+	if (bIsHealing == false)
+	{
+		return;
+	}
 	bIsHealing = false;
 }
 
 bool AMonsterCharacter::BeginRunning()
 {
-	CHECK_DEAD()
-
 	bIsRunning = true;
 	TargetMovingSpeed = ChaseSpeed;
 	LerpTime = 0.0f;
-
 	return SUCCESS;
 }
 
@@ -150,7 +145,7 @@ void AMonsterCharacter::EndRunning()
 
 bool AMonsterCharacter::BeginOnHit()
 {
-	CHECK_DEAD()
+	// CHECK_DEAD()
 	
 	InterruptExistingStates();
 	bIsOnHit = true;
@@ -183,7 +178,6 @@ void AMonsterCharacter::EndInvincible()
 void AMonsterCharacter::Die()
 {
 	Super::Die();
-	StopAnimMontage();
 	HealthBar->SetVisibility(false);
 }
 

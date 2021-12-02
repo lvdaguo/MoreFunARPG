@@ -29,7 +29,7 @@ protected:
 	void SetupComboDefaultValues();
 	virtual void SetupStateDefaultValues() override;
 
-	// Action
+	// Action Blueprint Implementation Helper
 	UFUNCTION(BlueprintCallable)
 	bool BeginPrimaryAttack(int32& OutComboAnimIndex);
 
@@ -60,15 +60,17 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void EndOnHit();
 
+	UFUNCTION(BlueprintCallable)
 	bool BeginInvincible();
 
+	UFUNCTION(BlueprintCallable)
 	void EndInvincible();
 
 	UFUNCTION(BlueprintCallable)
-	void OnAttackEnabled(class UPrimitiveComponent* WeaponHitBox);
+	void EnableWeapon(class UPrimitiveComponent* WeaponHitBox);
 
 	UFUNCTION(BlueprintCallable)
-	void OnAttackDisabled(class UPrimitiveComponent* WeaponHitBox);
+	void DisableWeapon(class UPrimitiveComponent* WeaponHitBox);
 
 	// BlueprintImplementableEvent
 	UFUNCTION(BlueprintImplementableEvent)
@@ -80,28 +82,41 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnHit();
 
+	// Action
+	// implemented in PlayerCharacter blueprint
+	// bind in PlayerController cpp script 
+public:
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnPrimaryAttackPressed();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnHealPressed();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnRollPressed();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnRunningPressed();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnRunningReleased();
+
 	// Axis
-	UFUNCTION(BlueprintCallable)
-	bool MoveRight(const float Value);
+	void MoveRight(const float Value);
+	void MoveForward(const float Value);
+	void Turn(const float Value);
+	void LookUp(const float Value);
 
-	UFUNCTION(BlueprintCallable)
-	bool MoveForward(const float Value);
-
-	UFUNCTION(BlueprintCallable)
-	bool Turn(const float Value);
-
-	UFUNCTION(BlueprintCallable)
-	bool LookUp(const float Value);
-
+protected:
 	// Attribute
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attribute")
 	float MaxEnergy = 100.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	float RunningEnergyCost = 20.0f;
+	float RunningEnergyCost = 10.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	float RunningEnergyRefuel = 30.0f;
+	float RunningEnergyRefuel = 20.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	TArray<int32> ComboDamageList = TArray<int32>{100, 100, 100, 100};
@@ -118,12 +133,15 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	float SwitchRunningTime = 2.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	float DefaultInvisibleTime = 2.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attribute")
+	float DefaultInvincibleTime = 2.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	float HalfRunningAngle = 60.0f;
 
+	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	float RollEnergyCost = 10.0f;
+	
 	// Runtime Member
 	UPROPERTY(BlueprintReadOnly)
 	float CurEnergy;
@@ -137,6 +155,8 @@ protected:
 	float TargetMovingSpeed;
 	float LerpTime;
 
+	float VerticalInput;
+
 	// Data From DataTable
 	TArray<struct FPlayerDataTableRow*> AllLevelData;
 	struct FPlayerDataTableRow* CurLevelData;
@@ -146,6 +166,7 @@ protected:
 
 	// States
 	bool bIsAttacking;
+	bool bIsComboActive;
 	bool bIsRolling;
 	bool bIsHealing;
 	bool bIsInvincible;
@@ -157,13 +178,30 @@ protected:
 
 	bool bIsRunning;
 
-	FORCEINLINE bool CanMove() const { return (bIsAttacking || bIsHealing || bIsRolling || bIsOnHit) == false; };
+	// Condition
+	FORCEINLINE bool CanAct() const { return (bIsAttacking || bIsHealing || bIsRolling || bIsOnHit) == false; };
+
+	FORCEINLINE bool IsFreeOfAction() const
+	{
+		return CanAct() && bIsOnHit == false && bIsRolling == false && bIsComboActive == false;
+	}
+
+	FORCEINLINE bool IsMovingForward() const
+	{
+		FVector MovingDirection = GetVelocity();
+		MovingDirection.Z = 0.0f;
+		MovingDirection.Normalize();
+		return FVector::DotProduct(MovingDirection, GetActorForwardVector())
+			> FMath::Cos(HalfRunningAngle / 180.0f * PI);
+	}
+
+	FORCEINLINE bool IsGettingForwardInput() const { return VerticalInput > 0; }
 
 	// Getter
 	UFUNCTION(BlueprintCallable)
 	virtual int32 GetMaxHealth() const override { return CurLevelData->MaxHealth; }
 
-	virtual int32 GetDamage() const override;
+	virtual int32 GetCalculatedDamage() const override;
 
 	UFUNCTION(BlueprintCallable)
 	int32 GetArmor() const { return CurLevelData->Armor; }
@@ -200,22 +238,15 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void ReceiveExp(int32 Exp);
 
+	void ExamineRunning();
 	void LerpSpeed(const float DeltaTime);
 	void UpdateEnergy(const float DeltaTime);
-	void InterruptExistingStates();
 
-	FORCEINLINE void ResetCombo() { CurCombo = 0; }
-
-	FORCEINLINE void NextCombo() { CurCombo = (CurCombo + 1) % MaxCombo; }
-
-	float VerticalInput;
-
-	FORCEINLINE bool IsMovingForward() const
+	FORCEINLINE void ResetCombo()
 	{
-		FVector MovingDirection = GetVelocity();
-		MovingDirection.Z = 0.0f;
-		MovingDirection.Normalize();
-		return FVector::DotProduct(MovingDirection, GetActorForwardVector())
-			> FMath::Cos(HalfRunningAngle / 180.0f * PI);
+		CurCombo = 0;
+		bIsComboActive = false;
 	}
+
+	FORCEINLINE void GoToNextCombo() { CurCombo = (CurCombo + 1) % MaxCombo; }
 };

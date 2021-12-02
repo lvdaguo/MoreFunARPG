@@ -9,13 +9,13 @@ DECLARE_EVENT_TwoParams(AARPGCharacter, FHealthChange, int32, int32)
 // Self Define Macro
 #define SUCCESS true
 #define FAIL false
-#define CHECK_DEAD() \
-{ \
-	if (bIsDead) \
-	{ \
-		return FAIL; \
-	} \
-}
+// #define CHECK_DEAD() \
+// { \
+// 	if (bIsDead) \
+// 	{ \
+// 		return FAIL; \
+// 	} \
+// }
 
 UCLASS()
 class MOREFUNARPG_API AARPGCharacter : public ACharacter
@@ -54,21 +54,22 @@ protected:
 
 	// Operation
 	void ChangeHealthSafe(int32 Diff);
+	void OnHealthChange(int32 Before, int32 After);
 	virtual void Die();
 
 	// Collision
 	UFUNCTION(BlueprintCallable)
 	void OnWeaponOverlap(AActor* OtherActor);
 	
-public:
 	virtual void ReceiveDamage(int32 Damage);
-
+public:
 	UFUNCTION(BlueprintCallable)
 	void ReceiveHeal(int32 Heal);
 
 	// Getter
 	virtual int32 GetMaxHealth() const { return 0; }
-	virtual int32 GetDamage() const { return 0; }
+protected:
+	virtual int32 GetCalculatedDamage() const { return 0; }
 
 	// Event / Delegate
 	FORCEINLINE FHealthChange& HealthChangeEvent() { return HealthChange; }

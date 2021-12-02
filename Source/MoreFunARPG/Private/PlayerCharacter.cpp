@@ -20,7 +20,7 @@ APlayerCharacter::APlayerCharacter()
 	SetupComponentDefaultValues();
 }
 
-// Init
+// Setup Default
 void APlayerCharacter::SetupComponent()
 {
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
@@ -69,6 +69,7 @@ void APlayerCharacter::SetupComboDefaultValues()
 void APlayerCharacter::SetupStateDefaultValues()
 {
 	bIsAttacking = false;
+	bIsComboActive = false;
 	bIsHealing = false;
 	bIsRolling = false;
 	bIsRunning = false;
@@ -85,7 +86,6 @@ void APlayerCharacter::BeginPlay()
 	SetupComboDefaultValues();
 
 	TargetMovingSpeed = WalkSpeed;
-	
 	VerticalInput = 0.0f;
 }
 
@@ -93,22 +93,12 @@ void APlayerCharacter::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// UE_LOG(LogTemp, Log, TEXT("PlayerStatus: %f, %f, running %d %d"),
-	// 	GetCharacterMovement()->MaxWalkSpeed, CurEnergy, bIsRunning, MaxEnergy)
-
-	if (bIsRunning && IsMovingForward() == false)
-	{
-		EndRunning();
-	}
-	
+	ExamineRunning();
 	LerpSpeed(DeltaTime);
 	UpdateEnergy(DeltaTime);
 }
 
-int32 APlayerCharacter::GetDamage() const
-{
-	return GetNormalDamage();
-}
+// Level
 
 void APlayerCharacter::LevelUp()
 {
@@ -122,33 +112,10 @@ void APlayerCharacter::LevelUp()
 	CurLevel++;
 }
 
-void APlayerCharacter::ReceiveDamage(const int32 Damage)
-{
-	if (Damage <= 0 || bIsInvincible)
-	{
-		return;
-	}
-
-	const int32 FinalDamage = Damage - GetArmor();
-	if (FinalDamage > 0)
-	{
-		ChangeHealthSafe(-1 * FinalDamage);
-		// if doing attacking action
-		// the damage still exists but the on hit wont be played
-		// means that attacking action wont be interrupted 
-		if (bIsAttacking == false)
-		{
-			OnHit();
-		}
-		BeginInvincible();
-		constexpr bool Loop = false;
-		GetWorldTimerManager().SetTimer(InvincibleTimerHandle, this,
-			&APlayerCharacter::EndInvincible, DefaultInvisibleTime, Loop);
-	}
-}
-
 void APlayerCharacter::ReceiveExp(const int32 Exp)
 {
+	check(Exp >= 0)
+
 	CurExpGained += Exp;
 	while (CurExpGained >= GetExpNeededToNextLevel())
 	{
@@ -162,8 +129,21 @@ void APlayerCharacter::ReceiveExp(const int32 Exp)
 	}
 }
 
+// Running 
+void APlayerCharacter::ExamineRunning()
+{
+	if (bIsRunning && IsFreeOfAction() && IsMovingForward() == false)
+	{
+		EndRunning();
+	}
+}
+
 void APlayerCharacter::LerpSpeed(const float DeltaTime)
 {
+	if (bIsRunning && CanAct() == false)
+	{
+		return;
+	}
 	bIsMaxRunningSpeed = false;
 	if (FMath::IsNearlyEqual(GetCharacterMovement()->MaxWalkSpeed, TargetMovingSpeed))
 	{
@@ -180,11 +160,10 @@ void APlayerCharacter::LerpSpeed(const float DeltaTime)
 
 void APlayerCharacter::UpdateEnergy(const float DeltaTime)
 {
-	if (bIsRunning && bIsAttacking == false)
+	if (bIsRunning && IsMovingForward() && IsFreeOfAction())
 	{
 		// attack can be interrupted now but is still playing the end of the attack animation
-		if (bIsRolling == false && bIsHealing == false &&
-			IsPlayingNetworkedRootMotionMontage())
+		if (bIsComboActive && IsPlayingNetworkedRootMotionMontage())
 		{
 			StopAnimMontage();
 		}
@@ -194,7 +173,7 @@ void APlayerCharacter::UpdateEnergy(const float DeltaTime)
 			EndRunning();
 		}
 	}
-	else
+	else if (bIsRolling == false)
 	{
 		if (CurEnergy >= MaxEnergy)
 		{
@@ -204,38 +183,39 @@ void APlayerCharacter::UpdateEnergy(const float DeltaTime)
 	}
 }
 
-void APlayerCharacter::InterruptExistingStates()
+// Damage Interface
+int32 APlayerCharacter::GetCalculatedDamage() const
 {
-	if (bIsRunning)
+	return GetNormalDamage();
+}
+
+void APlayerCharacter::ReceiveDamage(const int32 Damage)
+{
+	if (Damage <= 0 || bIsInvincible || bIsDead)
 	{
-		EndRunning();
+		return;
 	}
-	if (bIsHealing)
+
+	const int32 FinalDamage = Damage - GetArmor();
+	if (FinalDamage > 0)
 	{
-		EndHealing();
-	}
-	if (bIsAttacking)
-	{
-		EndPrimaryAttack();
-		GetWorldTimerManager().ClearTimer(ComboResetTimerHandle);
-		ResetCombo();
-	}
-	if (bIsRolling)
-	{
-		EndRolling();
+		ChangeHealthSafe(-1 * FinalDamage);
+		if (bIsDead == false)
+		{
+			OnHit();
+		}
 	}
 }
 
-// Action
+// Action Blueprint Implementation Helper
 bool APlayerCharacter::BeginRunning()
 {
-	CHECK_DEAD()
-	if (IsMovingForward() == false)
+	if (IsGettingForwardInput() == false)
 	{
 		return FAIL;
 	}
-	
 	UE_LOG(LogPlayerCharacter, Log, TEXT("OnBeginRunning"))
+
 	bIsRunning = true;
 	TargetMovingSpeed = RunningSpeed;
 	LerpTime = 0.0f;
@@ -245,6 +225,10 @@ bool APlayerCharacter::BeginRunning()
 
 void APlayerCharacter::EndRunning()
 {
+	if (bIsRunning == false)
+	{
+		return;
+	}
 	UE_LOG(LogPlayerCharacter, Log, TEXT("OnEndRunning"))
 	bIsRunning = false;
 	TargetMovingSpeed = WalkSpeed;
@@ -253,9 +237,7 @@ void APlayerCharacter::EndRunning()
 
 bool APlayerCharacter::BeginPrimaryAttack(int32& OutComboAnimIndex)
 {
-	CHECK_DEAD()
-
-	if (CanMove() == false)
+	if (CanAct() == false)
 	{
 		// ignore new input if player is already doing action
 		return FAIL;
@@ -269,16 +251,21 @@ bool APlayerCharacter::BeginPrimaryAttack(int32& OutComboAnimIndex)
 	GetWorldTimerManager().ClearTimer(ComboResetTimerHandle);
 
 	OutComboAnimIndex = CurCombo;
-	NextCombo();
-	
+	GoToNextCombo();
+
 	return SUCCESS;
 }
 
 void APlayerCharacter::EndPrimaryAttack()
 {
+	if (bIsAttacking == false)
+	{
+		return;
+	}
 	UE_LOG(LogPlayerCharacter, Log, TEXT("OnEndPrimaryAttack"))
 
 	bIsAttacking = false;
+	bIsComboActive = true;
 
 	// reset combo after some time
 	constexpr bool bLoop = false;
@@ -288,8 +275,7 @@ void APlayerCharacter::EndPrimaryAttack()
 
 bool APlayerCharacter::BeginHealing()
 {
-	CHECK_DEAD()
-	if (CanMove() == false)
+	if (CanAct() == false)
 	{
 		return FAIL;
 	}
@@ -302,6 +288,10 @@ bool APlayerCharacter::BeginHealing()
 
 void APlayerCharacter::EndHealing()
 {
+	if (bIsHealing == false)
+	{
+		return;
+	}
 	UE_LOG(LogPlayerCharacter, Log, TEXT("OnEndHealing"))
 
 	bIsHealing = false;
@@ -309,18 +299,20 @@ void APlayerCharacter::EndHealing()
 
 bool APlayerCharacter::BeginRolling()
 {
-	CHECK_DEAD()
-
-	if (bIsRolling)
+	if (bIsRolling || bIsOnHit || CurEnergy < RollEnergyCost)
 	{
 		return FAIL;
 	}
 
-	// interrupt from other states
-	InterruptExistingStates();
-	BeginInvincible();
-
 	UE_LOG(LogPlayerCharacter, Log, TEXT("OnBeginRoll"))
+
+	// interrupt from other states
+	EndHealing();
+	EndPrimaryAttack();
+	GetWorldTimerManager().ClearTimer(ComboResetTimerHandle);
+	ResetCombo();
+
+	CurEnergy -= RollEnergyCost;
 	bIsRolling = true;
 
 	return SUCCESS;
@@ -328,17 +320,25 @@ bool APlayerCharacter::BeginRolling()
 
 void APlayerCharacter::EndRolling()
 {
+	if (bIsRolling == false)
+	{
+		return;
+	}
 	UE_LOG(LogPlayerCharacter, Log, TEXT("OnEndRoll"))
 
 	bIsRolling = false;
-	EndInvincible();
 }
 
 bool APlayerCharacter::BeginOnHit()
 {
-	CHECK_DEAD()
-
-	InterruptExistingStates();
+	if (bIsOnHit || bIsAttacking)
+	{
+		// if doing attacking action
+		// the damage still exists but the on hit wont be played
+		// means that attacking action wont be interrupted
+		return FAIL;
+	}
+	EndHealing();
 	
 	bIsOnHit = true;
 	return SUCCESS;
@@ -346,11 +346,19 @@ bool APlayerCharacter::BeginOnHit()
 
 void APlayerCharacter::EndOnHit()
 {
+	if (bIsOnHit == false)
+	{
+		return;
+	}
 	bIsOnHit = false;
 }
 
 bool APlayerCharacter::BeginInvincible()
 {
+	if (bIsInvincible)
+	{
+		return FAIL;
+	}
 	bIsInvincible = true;
 	OnInvincibleBegin();
 
@@ -359,25 +367,17 @@ bool APlayerCharacter::BeginInvincible()
 
 void APlayerCharacter::EndInvincible()
 {
+	if (bIsInvincible == false)
+	{
+		return;
+	}
 	bIsInvincible = false;
 	OnInvincibleEnd();
 }
 
-void APlayerCharacter::OnAttackEnabled(UPrimitiveComponent* WeaponHitBox)
-{
-	WeaponHitBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-}
-
-void APlayerCharacter::OnAttackDisabled(UPrimitiveComponent* WeaponHitBox)
-{
-	WeaponHitBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-}
-
 // Axis
-bool APlayerCharacter::MoveForward(const float Value)
+void APlayerCharacter::MoveForward(const float Value)
 {
-	CHECK_DEAD()
-
 	VerticalInput = Value;
 	if (Controller != nullptr && Value != 0.0f)
 	{
@@ -387,14 +387,10 @@ bool APlayerCharacter::MoveForward(const float Value)
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		AddMovementInput(Direction, Value);
 	}
-
-	return SUCCESS;
 }
 
-bool APlayerCharacter::MoveRight(const float Value)
+void APlayerCharacter::MoveRight(const float Value)
 {
-	CHECK_DEAD()
-	
 	if (Controller != nullptr && Value != 0.0f)
 	{
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -403,22 +399,25 @@ bool APlayerCharacter::MoveRight(const float Value)
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		AddMovementInput(Direction, Value);
 	}
-
-	return SUCCESS;
 }
 
-bool APlayerCharacter::Turn(const float Value)
+void APlayerCharacter::Turn(const float Value)
 {
-	CHECK_DEAD()
-
 	AddControllerYawInput(Value);
-	return SUCCESS;
 }
 
-bool APlayerCharacter::LookUp(const float Value)
+void APlayerCharacter::LookUp(const float Value)
 {
-	CHECK_DEAD()
-
 	AddControllerPitchInput(Value);
-	return SUCCESS;
+}
+
+// Weapon
+void APlayerCharacter::EnableWeapon(UPrimitiveComponent* WeaponHitBox)
+{
+	WeaponHitBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+}
+
+void APlayerCharacter::DisableWeapon(UPrimitiveComponent* WeaponHitBox)
+{
+	WeaponHitBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
