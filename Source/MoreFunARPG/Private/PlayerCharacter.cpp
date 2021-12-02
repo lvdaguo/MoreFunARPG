@@ -209,7 +209,7 @@ void APlayerCharacter::ReceiveDamage(const int32 Damage)
 
 void APlayerCharacter::ReceiveHeal()
 {
-	HealLeft--;
+	HealPotion--;
 	ChangeHealthSafe(HealAmount);
 }
 
@@ -281,7 +281,7 @@ void APlayerCharacter::EndPrimaryAttack()
 
 bool APlayerCharacter::BeginHealing()
 {
-	if (CanAct() == false || HealLeft <= 0)
+	if (CanAct() == false || HealPotion <= 0)
 	{
 		return FAIL;
 	}

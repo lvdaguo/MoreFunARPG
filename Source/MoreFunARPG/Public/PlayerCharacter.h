@@ -143,7 +143,7 @@ protected:
 	float RollEnergyCost = 10.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	int32 HealLeft = 1;
+	int32 HealPotion = 1;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	int32 HealAmount = 50;

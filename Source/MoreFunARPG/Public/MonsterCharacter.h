@@ -45,8 +45,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	float DefaultInvisibleTime = 2.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	int32 HealLeft = 1;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attribute")
+	int32 HealPotion = 1;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	int32 HealAmount = 50;

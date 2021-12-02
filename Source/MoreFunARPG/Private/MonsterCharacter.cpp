@@ -138,7 +138,7 @@ void AMonsterCharacter::EndAttack()
 
 bool AMonsterCharacter::BeginHealing()
 {
-	if (CanAct() == false || HealLeft <= 0)
+	if (CanAct() == false || HealPotion <= 0)
 	{
 		return FAIL;
 	}
@@ -225,7 +225,7 @@ void AMonsterCharacter::Die()
 
 void AMonsterCharacter::ReceiveHeal()
 {
-	HealLeft--;
+	HealPotion--;
 	ChangeHealthSafe(HealAmount);
 }
 
