@@ -1,5 +1,6 @@
 #include "PlayerCharacter.h"
 
+#include "EnemySpawner.h"
 #include "MonsterCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "Chaos/KinematicTargets.h"
@@ -7,6 +8,7 @@
 #include "Engine/DataTable.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogPlayerCharacter, Log, All)
 
@@ -78,6 +80,18 @@ void APlayerCharacter::SetupStateDefaultValues()
 	bIsInvincible = false;
 }
 
+void APlayerCharacter::SetupDelegate()
+{
+	AActor* Temp = UGameplayStatics::GetActorOfClass(GetWorld(), AEnemySpawner::StaticClass());
+	AEnemySpawner* EnemySpawner = Cast<AEnemySpawner>(Temp);
+	EnemySpawner->EnemyDieEvent().AddDynamic(this, &APlayerCharacter::OnEnemyDie);	
+}
+
+void APlayerCharacter::OnEnemyDie(const int32 ExpWorth, const int32 /*Score*/)
+{
+	ReceiveExp(ExpWorth);
+}
+
 // Life Cycle
 void APlayerCharacter::BeginPlay()
 {
@@ -87,6 +101,8 @@ void APlayerCharacter::BeginPlay()
 
 	TargetMovingSpeed = WalkSpeed;
 	VerticalInput = 0.0f;
+
+	SetupDelegate();
 }
 
 void APlayerCharacter::Tick(const float DeltaTime)
@@ -99,6 +115,16 @@ void APlayerCharacter::Tick(const float DeltaTime)
 }
 
 // Level
+int32 APlayerCharacter::GetAccumulatedExp() const
+{
+	int32 Result = 0;
+	for (int32 i = 0; i < CurLevel - 1; ++i)
+	{
+		Result += AllLevelData[i]->ExpNeededToNextLevel;
+	}
+	Result += CurExpGained;
+	return Result;
+}
 
 void APlayerCharacter::LevelUp()
 {
@@ -181,6 +207,12 @@ void APlayerCharacter::UpdateEnergy(const float DeltaTime)
 		}
 		CurEnergy += RunningEnergyRefuel * DeltaTime;
 	}
+}
+
+void APlayerCharacter::Die()
+{
+	Super::Die();
+	PlayerDie.Broadcast(GetAccumulatedExp());
 }
 
 // Damage Interface

@@ -5,6 +5,8 @@
 #include "MonsterDataTableRow.h"
 #include "MonsterCharacter.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMonsterDie, int32, ExpWorth, int32, Score);
+
 UCLASS()
 class MOREFUNARPG_API AMonsterCharacter final : public AARPGCharacter
 {
@@ -53,6 +55,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	float LowHealthPercent = 0.4f;
+
+	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	int32 Score = 100;
 	
 	float LerpTime;
 	float TargetMovingSpeed;
@@ -143,4 +148,10 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	virtual void ReceiveDamage(int32 Damage) override;
+
+	UPROPERTY(BlueprintAssignable)
+	FMonsterDie MonsterDie;
+
+public:
+	FORCEINLINE FMonsterDie& MonsterDieEvent() { return MonsterDie; }
 };

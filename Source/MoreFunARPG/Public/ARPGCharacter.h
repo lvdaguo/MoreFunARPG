@@ -4,18 +4,9 @@
 #include "GameFramework/Character.h"
 #include "ARPGCharacter.generated.h"
 
-DECLARE_EVENT_TwoParams(AARPGCharacter, FHealthChange, int32, int32)
-
 // Self Define Macro
 #define SUCCESS true
 #define FAIL false
-// #define CHECK_DEAD() \
-// { \
-// 	if (bIsDead) \
-// 	{ \
-// 		return FAIL; \
-// 	} \
-// }
 
 UCLASS()
 class MOREFUNARPG_API AARPGCharacter : public ACharacter
@@ -54,7 +45,6 @@ protected:
 
 	// Operation
 	void ChangeHealthSafe(int32 Diff);
-	void OnHealthChange(int32 Before, int32 After);
 	virtual void Die();
 
 	// Collision
@@ -69,10 +59,4 @@ public:
 
 protected:
 	virtual int32 GetCalculatedDamage() const { return 0; }
-
-	// Event / Delegate
-	FORCEINLINE FHealthChange& HealthChangeEvent() { return HealthChange; }
-
-private:
-	FHealthChange HealthChange;
 };

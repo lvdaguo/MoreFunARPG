@@ -4,9 +4,10 @@
 void APlayerCharacterController::BeginPlay()
 {
 	Super::BeginPlay();
-	PlayerCharacter = Cast<APlayerCharacter>(GetPawn());
+	PlayerCharacter = GetPawn<APlayerCharacter>();
 	check(PlayerCharacter != nullptr)
 }
+
 
 void APlayerCharacterController::SetupInputComponent()
 {

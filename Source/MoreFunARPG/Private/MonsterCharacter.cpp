@@ -75,7 +75,7 @@ void AMonsterCharacter::BeginPlay()
 	const int32 Index = FMath::RandHelper(RandomMeshPool.Num());
 	GetMesh()->SetSkeletalMesh(RandomMeshPool[Index]);
 
-	PlayerCharacter = Cast<APlayerCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
+	PlayerCharacter = GetWorld()->GetFirstPlayerController()->GetPawn<APlayerCharacter>();
 	check(PlayerCharacter != nullptr)
 	
 	TargetMovingSpeed = PatrolSpeed;
@@ -227,6 +227,7 @@ void AMonsterCharacter::Die()
 {
 	Super::Die();
 	HealthBar->SetVisibility(false);
+	MonsterDie.Broadcast(GetExpWorth(), Score);
 }
 
 void AMonsterCharacter::ReceiveHeal()

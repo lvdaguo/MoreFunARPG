@@ -1,8 +1,7 @@
 #include "MonsterAIController.h"
-
 #include "MonsterCharacter.h"
-#include "PlayerCharacter.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig.h"
 
@@ -16,10 +15,7 @@ void AMonsterAIController::BeginPlay()
 	Super::BeginPlay();
 
 	RunBehaviorTree(BehaviourTree);
-
-	MonsterCharacter = Cast<AMonsterCharacter>(GetPawn());
-	check(MonsterCharacter != nullptr)
-
+	
 	static const FName PlayerActor(TEXT("PlayerActor"));
 	GetBlackboardComponent()->SetValueAsObject(PlayerActor,
 	                                           GetWorld()->GetFirstPlayerController()->GetPawn());
@@ -35,7 +31,7 @@ void AMonsterAIController::Tick(float DeltaSeconds)
 	const float Cur = static_cast<float>(MonsterCharacter->GetCurHealth());
 	const float Max = static_cast<float>(MonsterCharacter->GetMaxHealth());
 	const float HealthPercent = Cur / Max;
-
+	
 	GetBlackboardComponent()->SetValueAsBool(IsLowHealth,
 	                                         HealthPercent <= MonsterCharacter->GetLowHealthPercent());
 	GetBlackboardComponent()->SetValueAsBool(HasHealthPotion,
@@ -48,4 +44,11 @@ void AMonsterAIController::OnTargetPerceptionUpdated(AActor* Actor, const FAISti
 
 	GetBlackboardComponent()->SetValueAsBool(IsPlayerInSight,
 	                                         InStimulus.WasSuccessfullySensed());
+}
+
+void AMonsterAIController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+	MonsterCharacter = Cast<AMonsterCharacter>(InPawn);
+	check(MonsterCharacter != nullptr)
 }

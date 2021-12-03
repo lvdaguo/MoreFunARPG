@@ -32,4 +32,6 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void OnTargetPerceptionUpdated(class AActor* Actor, const struct FAIStimulus& InStimulus);
+
+	virtual void OnPossess(APawn* InPawn) override;
 };

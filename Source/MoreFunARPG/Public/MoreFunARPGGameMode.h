@@ -9,15 +9,16 @@ class AMoreFunARPGGameMode final : public AGameModeBase
 {
 	GENERATED_BODY()
 
-public:
+protected:
 	UPROPERTY(EditDefaultsOnly)
-	int32 PlayerLife;
+	int32 PlayerLife = 3;
 
 	UPROPERTY(EditDefaultsOnly)
-	float PlayerRespawnDelay;
+	float PlayerRespawnDelay = 5;
 
 	int32 PlayerScore;
 
+public:
 	AMoreFunARPGGameMode();
 
 protected:

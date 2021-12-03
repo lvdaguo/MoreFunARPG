@@ -14,8 +14,6 @@ void AARPGCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	HealthChangeEvent().AddUObject(this, &AARPGCharacter::OnHealthChange);
-
 	SetupStateDefaultValues();
 	SetupDataFromDataTable();
 }
@@ -32,13 +30,8 @@ void AARPGCharacter::ChangeHealthSafe(const int32 Diff)
 {
 	const int32 OriginHealth = CurHealth;
 	CurHealth = FMath::Clamp(CurHealth + Diff, 0, GetMaxHealth());
-	HealthChange.Broadcast(OriginHealth, CurHealth);
-}
-
-void AARPGCharacter::OnHealthChange(const int32 Before, const int32 After)
-{
-	UE_LOG(LogTemp, Log, TEXT("HP Bef %d Aft %d"), Before, After)
-	if (Before != 0 && After == 0)
+	UE_LOG(LogTemp, Log, TEXT("HP Bef %d Aft %d"), OriginHealth, CurHealth)
+	if (OriginHealth != 0 && CurHealth == 0)
 	{
 		Die();
 	}

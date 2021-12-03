@@ -7,6 +7,8 @@
 #include "GameFramework/Character.h"
 #include "PlayerCharacter.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerDie, int32, AccumulatedExp);
+
 UCLASS()
 class MOREFUNARPG_API APlayerCharacter final : public AARPGCharacter
 {
@@ -28,6 +30,7 @@ protected:
 	virtual void SetupDataFromDataTable() override;
 	void SetupComboDefaultValues();
 	virtual void SetupStateDefaultValues() override;
+	void SetupDelegate();
 
 	// Action Blueprint Implementation Helper
 	UFUNCTION(BlueprintCallable)
@@ -200,7 +203,7 @@ protected:
 	}
 
 	FORCEINLINE bool IsGettingForwardInput() const { return VerticalInput > 0; }
-
+	
 	// Getter
 	UFUNCTION(BlueprintCallable)
 	virtual int32 GetMaxHealth() const override { return CurLevelData->MaxHealth; }
@@ -217,6 +220,8 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	int32 GetExpNeededToNextLevel() const { return CurLevelData->ExpNeededToNextLevel; }
 
+	int32 GetAccumulatedExp() const;
+	
 public:
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE FVector GetCameraWorldLocation() const { return FollowCamera->GetComponentLocation(); }
@@ -248,6 +253,8 @@ protected:
 	void LerpSpeed(const float DeltaTime);
 	void UpdateEnergy(const float DeltaTime);
 
+	virtual void Die() override;
+	
 	FORCEINLINE void ResetCombo()
 	{
 		CurCombo = 0;
@@ -255,4 +262,12 @@ protected:
 	}
 
 	FORCEINLINE void GoToNextCombo() { CurCombo = (CurCombo + 1) % MaxCombo; }
+
+	void OnEnemyDie(int32 ExpWorth, int32 Score);
+	
+	UPROPERTY(BlueprintAssignable)
+	FPlayerDie PlayerDie;
+
+public:
+	FORCEINLINE FPlayerDie& PlayerDieEvent() { return PlayerDie; };
 };
