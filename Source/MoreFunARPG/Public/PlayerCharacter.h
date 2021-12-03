@@ -7,7 +7,7 @@
 #include "GameFramework/Character.h"
 #include "PlayerCharacter.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerDie, int32, AccumulatedExp);
+DECLARE_MULTICAST_DELEGATE_OneParam(FPlayerDie, int32);
 
 UCLASS()
 class MOREFUNARPG_API APlayerCharacter final : public AARPGCharacter
@@ -263,9 +263,9 @@ protected:
 
 	FORCEINLINE void GoToNextCombo() { CurCombo = (CurCombo + 1) % MaxCombo; }
 
+	UFUNCTION()
 	void OnEnemyDie(int32 ExpWorth, int32 Score);
 	
-	UPROPERTY(BlueprintAssignable)
 	FPlayerDie PlayerDie;
 
 public:

@@ -5,7 +5,7 @@
 #include "MonsterDataTableRow.h"
 #include "MonsterCharacter.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMonsterDie, int32, ExpWorth, int32, Score);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FMonsterDie, int32, int32);
 
 UCLASS()
 class MOREFUNARPG_API AMonsterCharacter final : public AARPGCharacter
@@ -14,18 +14,18 @@ class MOREFUNARPG_API AMonsterCharacter final : public AARPGCharacter
 
 	// Constructor
 public:
+	AMonsterCharacter();
+
+protected:
+	// Setup Default
 	void SetupComponent();
 	void SetupAttachment() const;
 	void SetupComponentDefaultValues() const;
-	AMonsterCharacter();
-
-	// Setup Default
 	virtual void SetupDataFromDataTable() override;
 	void SetupByLevel(int32 Level);
 	virtual void SetupStateDefaultValues() override;
 	
 	// Life Cycle
-protected:
 	virtual void BeginPlay() override;
 	void BarFacingPlayer() const;
 	void LerpSpeed(float DeltaTime);
@@ -149,7 +149,6 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	virtual void ReceiveDamage(int32 Damage) override;
 
-	UPROPERTY(BlueprintAssignable)
 	FMonsterDie MonsterDie;
 
 public:

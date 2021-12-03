@@ -228,6 +228,7 @@ void AMonsterCharacter::Die()
 	Super::Die();
 	HealthBar->SetVisibility(false);
 	MonsterDie.Broadcast(GetExpWorth(), Score);
+	MonsterDie.Clear();
 }
 
 void AMonsterCharacter::ReceiveHeal()

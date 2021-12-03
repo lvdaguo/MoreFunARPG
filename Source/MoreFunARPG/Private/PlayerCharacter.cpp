@@ -1,7 +1,7 @@
 #include "PlayerCharacter.h"
 
-#include "EnemySpawner.h"
 #include "MonsterCharacter.h"
+#include "Spawner.h"
 #include "Camera/CameraComponent.h"
 #include "Chaos/KinematicTargets.h"
 #include "Components/ShapeComponent.h"
@@ -82,13 +82,14 @@ void APlayerCharacter::SetupStateDefaultValues()
 
 void APlayerCharacter::SetupDelegate()
 {
-	AActor* Temp = UGameplayStatics::GetActorOfClass(GetWorld(), AEnemySpawner::StaticClass());
-	AEnemySpawner* EnemySpawner = Cast<AEnemySpawner>(Temp);
-	EnemySpawner->EnemyDieEvent().AddDynamic(this, &APlayerCharacter::OnEnemyDie);	
+	AActor* Temp = UGameplayStatics::GetActorOfClass(GetWorld(), ASpawner::StaticClass());
+	ASpawner* EnemySpawner = Cast<ASpawner>(Temp);
+	EnemySpawner->EnemyDieEvent().AddUObject(this, &APlayerCharacter::OnEnemyDie);	
 }
 
 void APlayerCharacter::OnEnemyDie(const int32 ExpWorth, const int32 /*Score*/)
 {
+	UE_LOG(LogTemp, Log, TEXT("Player Received %d"), ExpWorth)
 	ReceiveExp(ExpWorth);
 }
 
