@@ -12,8 +12,8 @@ class MOREFUNARPG_API AMonsterCharacter final : public AARPGCharacter
 {
 	GENERATED_BODY()
 
-	// Constructor
 public:
+	// Constructor
 	AMonsterCharacter();
 
 protected:
@@ -28,11 +28,10 @@ protected:
 	void SetupDelegate();
 	void SetupRandomMesh();
 	
-public:
 	// Level Setup
+	void SetupLevelByTime();
 	void SetupByLevel(int32 Level);
 
-protected:
 	// Life Cycle
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -78,6 +77,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	float DeadBodyExistTime = 10.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	TArray<float> LevelUnlockTimeList = {20.0f, 40.0f, 60.0f, 80.0f};
 	
 	float LerpTime;
 	float TargetMovingSpeed;
@@ -94,8 +96,8 @@ protected:
 	// Condition
 	FORCEINLINE bool CanAct() const { return (bIsAttacking || bIsHealing || bIsOnHit) == false; }
 
-	// Getter
 public:
+	// Getter
 	UFUNCTION(BlueprintCallable)
 	virtual int32 GetMaxHealth() const override { return CurLevelData->MaxHealth; }
 	
@@ -105,8 +107,8 @@ public:
 	FORCEINLINE int32 GetExpWorth() const { return CurLevelData->ExpWorth; }
 	FORCEINLINE int32 GetScore() const { return Score; }	
 
-	// Behavior Tree Task Helper
 protected:
+	// Behavior Tree Task Helper
 	UFUNCTION(BlueprintCallable)
 	bool BeginAttack();
 

@@ -443,6 +443,7 @@ bool APlayerCharacter::BeginOnHit()
 		return FAIL;
 	}
 	EndHealing();
+	EndRolling();
 	
 	bIsOnHit = true;
 	return SUCCESS;

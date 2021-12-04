@@ -66,3 +66,9 @@ void AMonsterAIController::OnPossess(APawn* InPawn)
 	MonsterCharacter->HealthChangeEvent().AddUObject(this,
 	                                                 &AMonsterAIController::OnMonsterHealthChange);
 }
+
+void AMonsterAIController::OnUnPossess()
+{
+	Super::OnUnPossess();
+	Destroy();
+}

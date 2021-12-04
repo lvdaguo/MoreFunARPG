@@ -74,12 +74,28 @@ void AMonsterCharacter::SetupRandomMesh()
 }
 
 // Level Setup
+void AMonsterCharacter::SetupLevelByTime()
+{
+	int32 Level = 1;
+	const float Cur = GetWorld()->TimeSeconds;
+	for (int32 i = 0; i < LevelUnlockTimeList.Num(); ++i)
+	{
+		if (Cur < LevelUnlockTimeList[i])
+		{
+			break;
+		}
+		++Level;
+	}
+	SetupByLevel(Level);
+}
+
 void AMonsterCharacter::SetupByLevel(const int32 Level)
 {
 	CurLevel = Level;
 	const int32 LevelIndex = Level - 1;
 	CurLevelData = AllLevelData[LevelIndex];
 	CurHealth = GetMaxHealth();
+	UE_LOG(LogTemp, Log, TEXT("Monster Lv: %d"), Level);
 }
 
 // Life Cycle
@@ -89,11 +105,14 @@ void AMonsterCharacter::BeginPlay()
 
 	SetupDataFromDataTable();
 
+	// GetWorld()->TimeSeconds;
+	
 	// To DO: better setup by spawner  
-	if (CurLevelData == nullptr)
-	{
-		SetupByLevel(1);
-	}
+	// if (CurLevelData == nullptr)
+	// {
+	// 	SetupByLevel(1);
+	// }
+	SetupLevelByTime();
 	
 	SetupRandomMesh();
 	SetupDelegate();

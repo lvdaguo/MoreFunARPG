@@ -57,7 +57,7 @@ protected:
 	float RunningEnergyRefuel = 20.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	TArray<float> ComboDamageRateList = TArray<float>{1.0f, 1.5f, 1.25f, 3.0f};
+	TArray<float> ComboDamageRateList = {1.0f, 1.5f, 1.25f, 3.0f};
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	float ComboResetDelayTime = 0.8f;
