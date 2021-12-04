@@ -7,7 +7,8 @@
 #include "GameFramework/Character.h"
 #include "PlayerCharacter.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FPlayerDie, int32);
+DECLARE_MULTICAST_DELEGATE(FPlayerDie);
+DECLARE_MULTICAST_DELEGATE_OneParam(FPlayerCameraLocationUpdate, FVector);
 
 UCLASS()
 class MOREFUNARPG_API APlayerCharacter final : public AARPGCharacter
@@ -56,7 +57,7 @@ protected:
 	float RunningEnergyRefuel = 20.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	TArray<int32> ComboDamageList = TArray<int32>{100, 100, 100, 100};
+	TArray<float> ComboDamageRateList = TArray<float>{1.0f, 1.5f, 1.25f, 3.0f};
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	float ComboResetDelayTime = 0.8f;
@@ -85,6 +86,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	int32 HealAmount = 50;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attribute")
+	int32 PlayerLife = 3;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 PlayerScore = 0;
+
 	// Runtime Member
 	UPROPERTY(BlueprintReadOnly)
 	float CurEnergy;
@@ -93,8 +100,11 @@ protected:
 	int32 CurCombo;
 	FTimerHandle ComboResetTimerHandle;
 
+	int32 CalculatedDamage;
+
+	UPROPERTY(BlueprintReadOnly)
 	int32 CurHealPotion;
-	
+
 	float TargetMovingSpeed;
 	float LerpTime;
 
@@ -120,7 +130,7 @@ protected:
 	bool bIsMaxRunningSpeed;
 
 	void ResetStates();
-	
+
 	// Condition
 	FORCEINLINE bool CanAct() const { return (bIsAttacking || bIsHealing || bIsRolling || bIsOnHit) == false; };
 
@@ -149,7 +159,6 @@ protected:
 	int32 GetExpNeededToNextLevel() const { return CurLevelData->ExpNeededToNextLevel; }
 
 public:
-	UFUNCTION(BlueprintCallable)
 	FORCEINLINE FVector GetCameraWorldLocation() const { return FollowCamera->GetComponentLocation(); }
 
 protected:
@@ -159,7 +168,8 @@ protected:
 
 	// Override
 	virtual int32 GetCalculatedDamage() const override;
-
+	void CalculateDamage();
+	
 	UFUNCTION(BlueprintCallable)
 	virtual void OnWeaponOverlap(AActor* OtherActor) override;
 
@@ -182,7 +192,6 @@ protected:
 	// Level
 	void LevelUp();
 	void ReceiveExp(int32 Exp);
-	int32 GetAccumulatedExp() const;
 
 	// Running
 	void ExamineRunning();
@@ -211,11 +220,19 @@ protected:
 	UFUNCTION()
 	void OnPlayerRespawn();
 
+	UFUNCTION()
+	void OnPlayerScoreUpdated(int32 Score);
+
 	// Delegate
 	FPlayerDie PlayerDie;
+	FPlayerCameraLocationUpdate PlayerCameraLocationUpdate;
 
 public:
 	FORCEINLINE FPlayerDie& PlayerDieEvent() { return PlayerDie; }
+	FORCEINLINE FPlayerCameraLocationUpdate& PlayerCameraLocationUpdateEvent()
+	{
+		return PlayerCameraLocationUpdate;
+	}
 
 	// Action Blueprint Implementation Helper
 	UFUNCTION(BlueprintCallable)

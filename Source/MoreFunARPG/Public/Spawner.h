@@ -10,7 +10,6 @@ DECLARE_MULTICAST_DELEGATE(FPlayerRespawn);
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FPlayerScoreUpdate, int32);
 DECLARE_MULTICAST_DELEGATE_OneParam(FPlayerExpUpdate, int32);
-DECLARE_MULTICAST_DELEGATE_OneParam(FPlayerCamLocationUpdate, FVector);
 
 UCLASS()
 class MOREFUNARPG_API ASpawner final : public AActor
@@ -47,9 +46,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class AHealPotion> HealthPotionClass;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	int32 PlayerLife = 3;
-
 	UPROPERTY(EditDefaultsOnly)
 	float PlayerRespawnDelay = 5;
 
@@ -59,6 +55,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class APlayerCharacter> PlayerCharacterClass;
 
+	UPROPERTY(EditDefaultsOnly)
+	float HealPotionDropRate = 0.25;
+	
 	// Component
 	UPROPERTY(VisibleAnywhere)
 	class UBoxComponent* SpawnVolume;
@@ -78,25 +77,23 @@ protected:
 
 	void SpawnMonster();
 	void SpawnHealPotion(const FVector& Position) const;
-	void InvokePlayerRespawn(int32 ExpAccumulated);
+	void InvokePlayerRespawn() const;
 	void SpawnBoss();
 	
 	// Listener
 	UFUNCTION()
 	void OnMonsterDie(const AMonsterCharacter* MonsterCharacter);
-	void DelayedPlayerRespawn(int32 ExpAccumulated);
+	void DelayedPlayerRespawn();
 
 	UFUNCTION()
-	void OnPlayerDie(int32 ExpAccumulated);
+	void OnPlayerDie();
 
 	// Delegate
 	FPlayerExpUpdate PlayerExpUpdate;
 	FPlayerScoreUpdate PlayerScoreUpdate;
 	FPlayerRespawn PlayerRespawn;
-	FPlayerCamLocationUpdate PlayerCamLocationUpdate;
 
 public:
-	FORCEINLINE FPlayerCamLocationUpdate& PlayerCamLocationUpdateEvent() { return PlayerCamLocationUpdate; }
 	FORCEINLINE FPlayerRespawn& PlayerRespawnEvent() { return PlayerRespawn; }
 	FORCEINLINE FPlayerExpUpdate& PlayerExpUpdateEvent() { return PlayerExpUpdate; }
 	FORCEINLINE FPlayerScoreUpdate& PlayerScoreUpdateEvent() { return PlayerScoreUpdate; }

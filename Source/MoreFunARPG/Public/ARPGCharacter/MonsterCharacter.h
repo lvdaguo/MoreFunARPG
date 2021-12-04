@@ -26,7 +26,7 @@ protected:
 	virtual void SetupState() override;
 	void SetupDataFromDataTable() ;
 	void SetupDelegate();
-	void RandomSetupMesh();
+	void SetupRandomMesh();
 	
 public:
 	// Level Setup
@@ -75,6 +75,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	int32 Score = 100;
+
+	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	float DeadBodyExistTime = 10.0f;
 	
 	float LerpTime;
 	float TargetMovingSpeed;
@@ -166,8 +169,8 @@ protected:
 
 	// Listener
 	UFUNCTION()
-	void OnPlayerCamLocationUpdated(FVector PlayerCamLocation);
-
+	void OnPlayerCameraLocationUpdated(FVector PlayerCamLocation);
+	
 	// Delegate
 	FMonsterDie MonsterDie;
 

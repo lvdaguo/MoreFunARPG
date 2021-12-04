@@ -68,7 +68,10 @@ void ASpawner::SpawnMonster()
 
 void ASpawner::SpawnHealPotion(const FVector& Position) const
 {
-	GetWorld()->SpawnActor<AHealPotion>(HealthPotionClass, Position, FRotator::ZeroRotator);
+	if (FMath::FRand() <= HealPotionDropRate)
+	{
+		GetWorld()->SpawnActor<AHealPotion>(HealthPotionClass, Position, FRotator::ZeroRotator);
+	}
 }
 
 void ASpawner::SpawnBoss()
@@ -83,25 +86,19 @@ void ASpawner::OnMonsterDie(const AMonsterCharacter* MonsterCharacter)
 	PlayerScoreUpdate.Broadcast(MonsterCharacter->GetScore());
 }
 
-void ASpawner::InvokePlayerRespawn(const int32 ExpAccumulated)
+void ASpawner::InvokePlayerRespawn() const
 {
-	PlayerLife--;
 	PlayerRespawn.Broadcast();
 }
 
-void ASpawner::DelayedPlayerRespawn(const int32 ExpAccumulated)
+void ASpawner::DelayedPlayerRespawn()
 {
 	FTimerHandle Handle;
-	const FTimerDelegate Delegate = FTimerDelegate::CreateUObject(this, &ASpawner::InvokePlayerRespawn, ExpAccumulated);
+	const FTimerDelegate Delegate = FTimerDelegate::CreateUObject(this, &ASpawner::InvokePlayerRespawn);
 	GetWorldTimerManager().SetTimer(Handle, Delegate, PlayerRespawnDelay, false);
 }
 
-void ASpawner::OnPlayerDie(const int32 ExpAccumulated)
+void ASpawner::OnPlayerDie()
 {
-	if (PlayerLife <= 0)
-	{
-		// game over
-		return;
-	}
-	DelayedPlayerRespawn(ExpAccumulated);
+	DelayedPlayerRespawn();
 }

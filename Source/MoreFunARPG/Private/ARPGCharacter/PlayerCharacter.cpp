@@ -65,7 +65,7 @@ void APlayerCharacter::SetupDataFromDataTable()
 void APlayerCharacter::SetupCombo()
 {
 	CurCombo = 0;
-	MaxCombo = ComboDamageList.Num();
+	MaxCombo = ComboDamageRateList.Num();
 }
 
 void APlayerCharacter::SetupState()
@@ -87,6 +87,7 @@ void APlayerCharacter::SetupRuntimeValues()
 	VerticalInput = 0.0f;
 	CurEnergy = MaxEnergy;
 	CurHealPotion = DefaultHealPotion;
+	CalculatedDamage = 0;
 }
 
 void APlayerCharacter::SetupDelegate()
@@ -94,6 +95,7 @@ void APlayerCharacter::SetupDelegate()
 	ASpawner* Spawner = Cast<ASpawner>(UGameplayStatics::GetActorOfClass(GetWorld(), ASpawner::StaticClass()));
 	Spawner->PlayerExpUpdateEvent().AddUObject(this, &APlayerCharacter::OnExpUpdated);
 	Spawner->PlayerRespawnEvent().AddUObject(this, &APlayerCharacter::OnPlayerRespawn);
+	Spawner->PlayerScoreUpdateEvent().AddUObject(this, &APlayerCharacter::OnPlayerScoreUpdated);
 }
 
 // Life Cycle
@@ -111,6 +113,8 @@ void APlayerCharacter::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	PlayerCameraLocationUpdateEvent().Broadcast(GetCameraWorldLocation());
+
 	if (bIsDead)
 	{
 		return;
@@ -122,17 +126,6 @@ void APlayerCharacter::Tick(const float DeltaTime)
 }
 
 // Level
-int32 APlayerCharacter::GetAccumulatedExp() const
-{
-	int32 Result = 0;
-	for (int32 i = 0; i < CurLevel - 1; ++i)
-	{
-		Result += AllLevelData[i]->ExpNeededToNextLevel;
-	}
-	Result += CurExpGained;
-	return Result;
-}
-
 void APlayerCharacter::LevelUp()
 {
 	if (CurLevel == MaxLevel)
@@ -183,12 +176,29 @@ void APlayerCharacter::OnWeaponOverlap(AActor* OtherActor)
 void APlayerCharacter::Die()
 {
 	Super::Die();
-	PlayerDie.Broadcast(GetAccumulatedExp());
+	if (PlayerLife <= 0)
+	{
+		// game over
+	}
+	else
+	{
+		PlayerLife--;
+		PlayerDie.Broadcast();
+	}
+}
+
+void APlayerCharacter::CalculateDamage()
+{
+	const bool IsCriticalHit = FMath::FRand() <= GetCriticalHitRate();
+	int32 Damage = IsCriticalHit ? GetCriticalDamage() : GetNormalDamage();
+	Damage *= ComboDamageRateList[CurCombo];
+	CalculatedDamage = Damage;
 }
 
 int32 APlayerCharacter::GetCalculatedDamage() const
 {
-	return GetNormalDamage();
+	// damage was calculated in every attack 
+	return CalculatedDamage;
 }
 
 void APlayerCharacter::ReceiveDamage(const int32 Damage)
@@ -266,7 +276,7 @@ void APlayerCharacter::UpdateEnergy(const float DeltaTime)
 // Heal
 void APlayerCharacter::ReceiveHeal()
 {
-	DefaultHealPotion--;
+	CurHealPotion--;
 	ChangeHealthSafe(HealAmount);
 }
 
@@ -280,7 +290,7 @@ void APlayerCharacter::OnHealthPotionOverlap(AHealPotion*Potion)
 {
 	if (Potion != nullptr)
 	{
-		DefaultHealPotion++;
+		CurHealPotion++;
 		Potion->Destroy();
 	}
 }
@@ -294,6 +304,11 @@ void APlayerCharacter::OnPlayerRespawn()
 
 	const AActor* Start = UGameplayStatics::GetActorOfClass(GetWorld(), APlayerStart::StaticClass());	
 	SetActorLocation(Start->GetActorLocation());
+}
+
+void APlayerCharacter::OnPlayerScoreUpdated(int32 Score)
+{
+	PlayerScore += Score;
 }
 
 // Action Blueprint Implementation Helper
@@ -336,11 +351,11 @@ bool APlayerCharacter::BeginPrimaryAttack(int32& OutComboAnimIndex)
 
 	bIsAttacking = true;
 
+	CalculateDamage();
+	
 	// cancel combo reset
 	GetWorldTimerManager().ClearTimer(ComboResetTimerHandle);
-
 	OutComboAnimIndex = CurCombo;
-	GoToNextCombo();
 
 	return SUCCESS;
 }
@@ -355,6 +370,7 @@ void APlayerCharacter::EndPrimaryAttack()
 
 	bIsAttacking = false;
 	bIsComboActive = true;
+	GoToNextCombo();
 
 	// reset combo after some time
 	constexpr bool bLoop = false;
@@ -364,7 +380,7 @@ void APlayerCharacter::EndPrimaryAttack()
 
 bool APlayerCharacter::BeginHealing()
 {
-	if (CanAct() == false || DefaultHealPotion <= 0)
+	if (CanAct() == false || CurHealPotion <= 0)
 	{
 		return FAIL;
 	}

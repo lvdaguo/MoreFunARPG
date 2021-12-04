@@ -62,11 +62,12 @@ void AMonsterCharacter::SetupState()
 
 void AMonsterCharacter::SetupDelegate()
 {
-	ASpawner* Spawner = Cast<ASpawner>(UGameplayStatics::GetActorOfClass(GetWorld(), ASpawner::StaticClass()));
-	Spawner->PlayerCamLocationUpdateEvent().AddUObject(this, &AMonsterCharacter::OnPlayerCamLocationUpdated);
+	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(
+		UGameplayStatics::GetActorOfClass(GetWorld(), APlayerCharacter::StaticClass()));
+	PlayerCharacter->PlayerCameraLocationUpdateEvent().AddUObject(this, &AMonsterCharacter::OnPlayerCameraLocationUpdated);
 }
 
-void AMonsterCharacter::RandomSetupMesh()
+void AMonsterCharacter::SetupRandomMesh()
 {
 	const int32 Index = FMath::RandHelper(RandomMeshPool.Num());
 	GetMesh()->SetSkeletalMesh(RandomMeshPool[Index]);
@@ -94,7 +95,7 @@ void AMonsterCharacter::BeginPlay()
 		SetupByLevel(1);
 	}
 	
-	RandomSetupMesh();
+	SetupRandomMesh();
 	SetupDelegate();
 	
 	TargetMovingSpeed = PatrolSpeed;
@@ -258,6 +259,7 @@ void AMonsterCharacter::Die()
 	HealthBar->SetVisibility(false);
 	MonsterDie.Broadcast(this);
 	MonsterDie.Clear();
+	SetLifeSpan(DeadBodyExistTime);
 }
 
 void AMonsterCharacter::ReceiveHeal()
@@ -283,7 +285,7 @@ void AMonsterCharacter::ReceiveDamage(const int32 Damage)
 }
 
 // Listener
-void AMonsterCharacter::OnPlayerCamLocationUpdated(FVector PlayerCamLocation)
+void AMonsterCharacter::OnPlayerCameraLocationUpdated(FVector PlayerCamLocation)
 {
 	BarFacingTarget(PlayerCamLocation);
 }
