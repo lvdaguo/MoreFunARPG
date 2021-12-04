@@ -1,4 +1,6 @@
 #include "Controller/MonsterAIController.h"
+
+#include "Spawner.h"
 #include "ARPGCharacter/MonsterCharacter.h"
 #include "ARPGCharacter/PlayerCharacter.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -10,11 +12,36 @@ AMonsterAIController::AMonsterAIController()
 	AIPerception = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AIPerception"));
 }
 
+void AMonsterAIController::SetupDelegate()
+{
+	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(
+		UGameplayStatics::GetActorOfClass(GetWorld(), APlayerCharacter::StaticClass()));
+	PlayerCharacter->PlayerDieEvent().AddUObject(this, &AMonsterAIController::OnPlayerDead);
+
+	ASpawner* Spawner = Cast<ASpawner>(UGameplayStatics::GetActorOfClass(GetWorld(), ASpawner::StaticClass()));
+	Spawner->PlayerRespawnEvent().AddUObject(this, &AMonsterAIController::OnPlayerRespawn);
+}
+
 void AMonsterAIController::BeginPlay()
 {
 	Super::BeginPlay();
 
 	RunBehaviorTree(BehaviourTree);
+
+	OnPlayerRespawn();
+	SetupDelegate();
+}
+
+void AMonsterAIController::OnPlayerDead()
+{
+	static const FName IsPlayerDead(TEXT("IsPlayerDead"));
+	GetBlackboardComponent()->SetValueAsBool(IsPlayerDead, true);
+}
+
+void AMonsterAIController::OnPlayerRespawn()
+{
+	static const FName IsPlayerDead(TEXT("IsPlayerDead"));
+	GetBlackboardComponent()->SetValueAsBool(IsPlayerDead, false);
 }
 
 void AMonsterAIController::Tick(float DeltaSeconds)
