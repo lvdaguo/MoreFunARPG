@@ -4,6 +4,8 @@
 #include "GameFramework/Character.h"
 #include "ARPGCharacter.generated.h"
 
+DECLARE_MULTICAST_DELEGATE_TwoParams(FHealthChange, int32, int32);
+
 // Self Define Macro
 #define SUCCESS true
 #define FAIL false
@@ -46,17 +48,25 @@ protected:
 	// Operation
 	void ChangeHealthSafe(int32 Diff);
 	virtual void Die();
+	void DealDamageSafe(AARPGCharacter* Receiver) const;
 
 	// Collision
-	UFUNCTION(BlueprintCallable)
-	void OnWeaponOverlap(AActor* OtherActor);
+	virtual void OnWeaponOverlap(AActor* OtherActor);
 	
 	virtual void ReceiveDamage(int32 Damage);
 
+	UFUNCTION()
+	void OnHealthChange(const int32 Before, const int32 After);
+	
 public:
 	// Getter
 	virtual int32 GetMaxHealth() const { return 0; }
 
 protected:
 	virtual int32 GetCalculatedDamage() const { return 0; }
+
+	FHealthChange HealthChange;
+
+	public:
+	FORCEINLINE FHealthChange& HealthChangeEvent() { return HealthChange; }
 };

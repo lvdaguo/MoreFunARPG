@@ -223,11 +223,16 @@ void AMonsterCharacter::DisableWeapon(UPrimitiveComponent* WeaponHitBox)
 	WeaponHitBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
+void AMonsterCharacter::OnWeaponOverlap(AActor* OtherActor)
+{
+	DealDamageSafe(Cast<APlayerCharacter>(OtherActor));
+}
+
 void AMonsterCharacter::Die()
 {
 	Super::Die();
 	HealthBar->SetVisibility(false);
-	MonsterDie.Broadcast(GetExpWorth(), Score);
+	MonsterDie.Broadcast(this);
 	MonsterDie.Clear();
 }
 

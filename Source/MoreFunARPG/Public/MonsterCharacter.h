@@ -5,7 +5,7 @@
 #include "MonsterDataTableRow.h"
 #include "MonsterCharacter.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_TwoParams(FMonsterDie, int32, int32);
+DECLARE_MULTICAST_DELEGATE_OneParam(FMonsterDie, const class AMonsterCharacter*);
 
 UCLASS()
 class MOREFUNARPG_API AMonsterCharacter final : public AARPGCharacter
@@ -94,10 +94,13 @@ public:
 	FORCEINLINE int32 GetCurHealth() const { return CurHealth; }
  	FORCEINLINE float GetLowHealthPercent() const { return LowHealthPercent; } 
 	FORCEINLINE int32 GetHealthPotion() const { return HealPotion; }
-	
-protected:
-	FORCEINLINE virtual int32 GetCalculatedDamage() const override { return CurLevelData->Damage; }
 	FORCEINLINE int32 GetExpWorth() const { return CurLevelData->ExpWorth; }
+	FORCEINLINE int32 GetScore() const { return Score; }	
+
+protected:
+
+	FORCEINLINE virtual int32 GetCalculatedDamage() const override { return CurLevelData->Damage; }
+
 	
 	// Action
 	UFUNCTION(BlueprintCallable)
@@ -141,6 +144,9 @@ protected:
 	void OnHit();
 	
 	// Operation
+	UFUNCTION(BlueprintCallable)
+	virtual void OnWeaponOverlap(AActor* OtherActor) override;
+	
 	virtual void Die() override;
 
 	UFUNCTION(BlueprintCallable)
@@ -150,6 +156,7 @@ protected:
 	virtual void ReceiveDamage(int32 Damage) override;
 
 	FMonsterDie MonsterDie;
+
 
 public:
 	FORCEINLINE FMonsterDie& MonsterDieEvent() { return MonsterDie; }

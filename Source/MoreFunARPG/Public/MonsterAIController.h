@@ -30,6 +30,9 @@ protected:
 
 	virtual void Tick(float DeltaSeconds) override;
 
+	UFUNCTION()
+	void OnMonsterHealthChange(int32 Before, int32 After);
+
 	UFUNCTION(BlueprintCallable)
 	void OnTargetPerceptionUpdated(class AActor* Actor, const struct FAIStimulus& InStimulus);
 

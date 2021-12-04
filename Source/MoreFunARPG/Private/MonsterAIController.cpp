@@ -38,11 +38,20 @@ void AMonsterAIController::Tick(float DeltaSeconds)
 	                                         MonsterCharacter->GetHealthPotion() > 0);
 }
 
+void AMonsterAIController::OnMonsterHealthChange(const int32 Before, const int32 After)
+{
+	if (Before > After)
+	{
+		static const FName IsPlayerInSight(TEXT("IsPlayerInSight"));
+		GetBlackboardComponent()->SetValueAsBool(IsPlayerInSight, true);
+	}
+}
+
 void AMonsterAIController::OnTargetPerceptionUpdated(AActor* Actor, const FAIStimulus& InStimulus)
 {
-	static const FName IsPlayerInSight(TEXT("IsPlayerInSight"));
 	if (Actor->IsA(APlayerCharacter::StaticClass()))
 	{
+		static const FName IsPlayerInSight(TEXT("IsPlayerInSight"));
 		GetBlackboardComponent()->SetValueAsBool(IsPlayerInSight,
 		                                         InStimulus.WasSuccessfullySensed());
 	}
@@ -53,4 +62,6 @@ void AMonsterAIController::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 	MonsterCharacter = Cast<AMonsterCharacter>(InPawn);
 	check(MonsterCharacter != nullptr)
+	MonsterCharacter->HealthChangeEvent().AddUObject(this,
+	                                                 &AMonsterAIController::OnMonsterHealthChange);
 }

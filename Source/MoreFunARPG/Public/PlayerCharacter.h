@@ -239,6 +239,12 @@ protected:
 
 	// Operation
 	void LevelUp();
+
+	UFUNCTION(BlueprintCallable)
+	virtual void OnWeaponOverlap(AActor* OtherActor) override;
+
+	UFUNCTION(BlueprintCallable)
+	void OnPotionOverlap(AActor* OtherActor);
 	
 	UFUNCTION(BlueprintCallable)
 	virtual void ReceiveDamage(int32 Damage) override;
@@ -264,10 +270,13 @@ protected:
 	FORCEINLINE void GoToNextCombo() { CurCombo = (CurCombo + 1) % MaxCombo; }
 
 	UFUNCTION()
-	void OnEnemyDie(int32 ExpWorth, int32 Score);
+	void OnExpUpdated(const int32 Exp);
 	
 	FPlayerDie PlayerDie;
 
+	UFUNCTION(BlueprintCallable)
+	void OnHealthPotionOverlap(class AHealPotion* Potion);
+	
 public:
 	FORCEINLINE FPlayerDie& PlayerDieEvent() { return PlayerDie; };
 };

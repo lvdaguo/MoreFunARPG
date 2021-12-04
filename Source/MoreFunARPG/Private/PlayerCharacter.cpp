@@ -1,5 +1,6 @@
 #include "PlayerCharacter.h"
 
+#include "HealPotion.h"
 #include "MonsterCharacter.h"
 #include "Spawner.h"
 #include "Camera/CameraComponent.h"
@@ -84,13 +85,21 @@ void APlayerCharacter::SetupDelegate()
 {
 	AActor* Temp = UGameplayStatics::GetActorOfClass(GetWorld(), ASpawner::StaticClass());
 	ASpawner* EnemySpawner = Cast<ASpawner>(Temp);
-	EnemySpawner->EnemyDieEvent().AddUObject(this, &APlayerCharacter::OnEnemyDie);	
+	EnemySpawner->PlayerExpUpdateEvent().BindUObject(this, &APlayerCharacter::OnExpUpdated);	
 }
 
-void APlayerCharacter::OnEnemyDie(const int32 ExpWorth, const int32 /*Score*/)
+void APlayerCharacter::OnExpUpdated(const int32 Exp)
 {
-	UE_LOG(LogTemp, Log, TEXT("Player Received %d"), ExpWorth)
-	ReceiveExp(ExpWorth);
+	ReceiveExp(Exp);
+}
+
+void APlayerCharacter::OnHealthPotionOverlap(AHealPotion*Potion)
+{
+	if (Potion != nullptr)
+	{
+		HealPotion++;
+		Potion->Destroy();
+	}
 }
 
 // Life Cycle
@@ -137,6 +146,19 @@ void APlayerCharacter::LevelUp()
 	CurLevelData = AllLevelData[CurLevelIndex + 1];
 	CurHealth = GetMaxHealth();
 	CurLevel++;
+}
+
+void APlayerCharacter::OnWeaponOverlap(AActor* OtherActor)
+{
+	Super::OnWeaponOverlap(OtherActor);
+}
+
+void APlayerCharacter::OnPotionOverlap(AActor* OtherActor)
+{
+	if (OtherActor->IsA(AHealPotion::StaticClass()))
+	{
+		HealPotion++;
+	}
 }
 
 void APlayerCharacter::ReceiveExp(const int32 Exp)

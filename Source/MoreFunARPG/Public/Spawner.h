@@ -1,10 +1,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "MonsterCharacter.h"
+#include "HealPotion.h"
 #include "GameFramework/Actor.h"
 #include "Spawner.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_TwoParams(FEnemyDie, int32, int32);
+DECLARE_MULTICAST_DELEGATE_OneParam(FMonsterDie, const class AMonsterCharacter*)
+
+DECLARE_DELEGATE_OneParam(FPlayerScoreUpdate, int32)
+DECLARE_DELEGATE_OneParam(FPlayerExpUpdate, int32)
 
 UCLASS()
 class MOREFUNARPG_API ASpawner final : public AActor
@@ -18,6 +23,10 @@ protected:
 	virtual void BeginPlay() override;
 
 	virtual void Tick(float DeltaTime) override;
+	FVector GetRandomPointInBox() const;
+	
+	template <class T>
+	T* RandomSpawn(class UClass*);
 
 	// template <class T>
 	// T* RandomSpawnEnemy(UClass* EnemyClass) const;
@@ -30,11 +39,14 @@ protected:
 	int32 BatchEnemyCount = 1;
 
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<class AARPGCharacter> MonsterClass;
+	TSubclassOf<class AMonsterCharacter> MonsterClass;
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class AARPGCharacter> BossClass;
 
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class AHealPotion> HealthPotionClass;
+	
 	UPROPERTY(EditDefaultsOnly)
 	int32 BossTriggerCount = 10;
 
@@ -54,12 +66,15 @@ protected:
 
 	void RandomSpawnMonster();
 
+	void SpawnHealPotion(const FVector& Position);
 	UFUNCTION()
-	void InvokeEnemyDie(int32 ExpWorth, int32 Score);
+	void OnMonsterDie(const AMonsterCharacter* MonsterCharacter);
 	void RandomSpawnBoss();
 
-	FEnemyDie EnemyDie;
+	FPlayerExpUpdate PlayerExpUpdate;
+	FPlayerScoreUpdate PlayerScoreUpdate;
 
 public:
-	FORCEINLINE FEnemyDie& EnemyDieEvent() { return EnemyDie; }
+	FORCEINLINE FPlayerExpUpdate& PlayerExpUpdateEvent() { return PlayerExpUpdate; }
+	FORCEINLINE FPlayerScoreUpdate& PlayerScoreUpdateEvent() { return PlayerScoreUpdate; }
 };

@@ -16,6 +16,8 @@ void AARPGCharacter::BeginPlay()
 
 	SetupStateDefaultValues();
 	SetupDataFromDataTable();
+	HealthChange.AddUObject(this, &AARPGCharacter::OnHealthChange);
+	
 }
 
 void AARPGCharacter::ReceiveDamage(const int32 Damage)
@@ -26,15 +28,21 @@ void AARPGCharacter::ReceiveDamage(const int32 Damage)
 	}
 }
 
+void AARPGCharacter::OnHealthChange(const int32 Before, const int32 After)
+{
+	UE_LOG(LogTemp, Log, TEXT("HP Bef %d Aft %d"), Before, After)
+	if (Before != 0 && After == 0)
+	{
+		Die();
+	}
+}
+
 void AARPGCharacter::ChangeHealthSafe(const int32 Diff)
 {
 	const int32 OriginHealth = CurHealth;
 	CurHealth = FMath::Clamp(CurHealth + Diff, 0, GetMaxHealth());
-	UE_LOG(LogTemp, Log, TEXT("HP Bef %d Aft %d"), OriginHealth, CurHealth)
-	if (OriginHealth != 0 && CurHealth == 0)
-	{
-		Die();
-	}
+	HealthChange.Broadcast(OriginHealth, CurHealth);
+
 }
 
 void AARPGCharacter::Die()
@@ -49,12 +57,17 @@ void AARPGCharacter::Die()
 	GetController()->UnPossess();
 }
 
+void AARPGCharacter::DealDamageSafe(AARPGCharacter* Receiver) const
+{
+	if (Receiver == nullptr || Receiver == this)
+	{
+		return;
+	}
+	const int32 CalculatedDamage = GetCalculatedDamage();
+	Receiver->ReceiveDamage(CalculatedDamage);
+}
+
 void AARPGCharacter::OnWeaponOverlap(AActor* OtherActor)
 {
-	AARPGCharacter* OtherCharacter = Cast<AARPGCharacter>(OtherActor);
-	if (OtherCharacter != nullptr && OtherCharacter != this)
-	{
-		const int32 CalculatedDamage = GetCalculatedDamage();
-		OtherCharacter->ReceiveDamage(CalculatedDamage);
-	}
+	DealDamageSafe(Cast<AARPGCharacter>(OtherActor));
 }

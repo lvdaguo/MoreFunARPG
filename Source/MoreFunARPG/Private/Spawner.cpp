@@ -28,35 +28,43 @@ void ASpawner::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void ASpawner::RandomSpawnMonster()
+FVector ASpawner::GetRandomPointInBox() const
 {
 	const float X = FMath::RandRange(SpawnBox.Min.X, SpawnBox.Max.X);
 	const float Y = FMath::RandRange(SpawnBox.Min.Y, SpawnBox.Max.Y);
-	const FVector Position(X, Y, SpawnHeight);
-	AMonsterCharacter* MonsterCharacter = GetWorld()->SpawnActor<AMonsterCharacter>(MonsterClass, Position, FRotator::ZeroRotator);
+	return FVector(X, Y, SpawnHeight);
+}
+
+template<class T>
+T* ASpawner::RandomSpawn(UClass * ActorClass)
+{
+	const FVector Position = GetRandomPointInBox();
+	return GetWorld()->SpawnActor<T>(ActorClass, Position, FRotator::ZeroRotator);
+}
+
+void ASpawner::RandomSpawnMonster()
+{
+	AMonsterCharacter* MonsterCharacter = RandomSpawn<AMonsterCharacter>(MonsterClass);
 	if (MonsterCharacter == nullptr)
 	{
 		return;
 	}
-	MonsterCharacter->MonsterDieEvent().AddUObject(this, &ASpawner::InvokeEnemyDie);
+	MonsterCharacter->MonsterDieEvent().AddUObject(this, &ASpawner::OnMonsterDie);
 }
 
-void ASpawner::InvokeEnemyDie(int32 ExpWorth, int32 Score)
+void ASpawner::SpawnHealPotion(const FVector& Position)
 {
-	UE_LOG(LogTemp, Log, TEXT("Invoked Received %d %d"), ExpWorth, Score)
-	EnemyDie.Broadcast(ExpWorth, Score);
+	GetWorld()->SpawnActor<AHealPotion>(HealthPotionClass, Position, FRotator::ZeroRotator);
+
+}
+
+void ASpawner::OnMonsterDie(const AMonsterCharacter* MonsterCharacter)
+{
+	SpawnHealPotion(MonsterCharacter->GetActorLocation());
+	PlayerExpUpdate.ExecuteIfBound(MonsterCharacter->GetExpWorth());
+	PlayerScoreUpdate.ExecuteIfBound(MonsterCharacter->GetScore());
 }
 
 void ASpawner::RandomSpawnBoss()
 {
-	
 }
-
-// template <class T>
-// T* ASpawner::RandomSpawnEnemy(UClass* EnemyClass) const
-// {
-// 	const float X = FMath::RandRange(SpawnBox.Min.X, SpawnBox.Max.X);
-// 	const float Y = FMath::RandRange(SpawnBox.Min.Y, SpawnBox.Max.Y);
-// 	const FVector Position(X, Y, SpawnHeight);
-// 	return GetWorld()->SpawnActor<T>(EnemyClass, Position, FRotator::ZeroRotator);
-// }
