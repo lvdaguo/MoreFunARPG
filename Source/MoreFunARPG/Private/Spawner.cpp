@@ -1,11 +1,10 @@
 #include "Spawner.h"
-
-#include "MonsterCharacter.h"
-#include "PlayerCharacter.h"
+#include "ARPGCharacter/MonsterCharacter.h"
+#include "ARPGCharacter/PlayerCharacter.h"
 #include "Components/BoxComponent.h"
-#include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 
+// Constructor
 ASpawner::ASpawner()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -13,32 +12,35 @@ ASpawner::ASpawner()
 	SpawnVolume->SetupAttachment(RootComponent);
 }
 
+// Setup Default
+void ASpawner::StartMonsterSpawnRoutine()
+{
+	constexpr bool Loop = true;
+	GetWorldTimerManager().SetTimer(SpawnTimerHandle, this, &ASpawner::SpawnMonster, SpawnInterval, Loop);
+}
+
+void ASpawner::SetupDelegate()
+{
+	PlayerCharacter = GetWorld()->GetFirstPlayerController()->GetPawn<APlayerCharacter>();
+	PlayerCharacter->PlayerDieEvent().AddUObject(this, &ASpawner::OnPlayerDie);
+}
+
+// Life Cycle
 void ASpawner::BeginPlay()
 {
 	Super::BeginPlay();
 
-	MonsterCount = 0;
-	bIsBossSpawned = false;
-	
 	SpawnBox = SpawnVolume->Bounds.GetBox();
-
-	constexpr bool Loop = true;
-	GetWorldTimerManager().SetTimer(SpawnTimerHandle, this, &ASpawner::RandomSpawnMonster, SpawnInterval, Loop);
-
-	PlayerCharacter = GetWorld()->GetFirstPlayerController()->GetPawn<APlayerCharacter>();
-	check(PlayerCharacter != nullptr)
-	PlayerCharacter->PlayerDieEvent().AddUObject(this, &ASpawner::OnPlayerDie);
+	StartMonsterSpawnRoutine();
+	SetupDelegate();
 }
 
 void ASpawner::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (PlayerCharacter != nullptr)
-	{
-		PlayerCamLocationUpdate.ExecuteIfBound(PlayerCharacter->GetCameraWorldLocation());
-	}
 }
 
+// Spawn Operation
 FVector ASpawner::GetRandomPointInBox() const
 {
 	const float X = FMath::RandRange(SpawnBox.Min.X, SpawnBox.Max.X);
@@ -53,9 +55,10 @@ T* ASpawner::RandomSpawn(UClass * ActorClass)
 	return GetWorld()->SpawnActor<T>(ActorClass, Position, FRotator::ZeroRotator);
 }
 
-void ASpawner::RandomSpawnMonster()
+void ASpawner::SpawnMonster()
 {
 	AMonsterCharacter* MonsterCharacter = RandomSpawn<AMonsterCharacter>(MonsterClass);
+	// may fail because of collision
 	if (MonsterCharacter == nullptr)
 	{
 		return;
@@ -68,44 +71,37 @@ void ASpawner::SpawnHealPotion(const FVector& Position) const
 	GetWorld()->SpawnActor<AHealPotion>(HealthPotionClass, Position, FRotator::ZeroRotator);
 }
 
+void ASpawner::SpawnBoss()
+{
+}
+
+// Listener
 void ASpawner::OnMonsterDie(const AMonsterCharacter* MonsterCharacter)
 {
 	SpawnHealPotion(MonsterCharacter->GetActorLocation());
-	if (PlayerExpUpdate.IsBound())
-	{
-		PlayerExpUpdate.Execute(MonsterCharacter->GetExpWorth());
-	}
-	if (PlayerScoreUpdate.IsBound())
-	{
-		PlayerScoreUpdate.Execute(MonsterCharacter->GetScore());
-	}
+	PlayerExpUpdate.Broadcast(MonsterCharacter->GetExpWorth());
+	PlayerScoreUpdate.Broadcast(MonsterCharacter->GetScore());
+}
+
+void ASpawner::InvokePlayerRespawn(const int32 ExpAccumulated)
+{
+	PlayerLife--;
+	PlayerRespawn.Broadcast();
+}
+
+void ASpawner::DelayedPlayerRespawn(const int32 ExpAccumulated)
+{
+	FTimerHandle Handle;
+	const FTimerDelegate Delegate = FTimerDelegate::CreateUObject(this, &ASpawner::InvokePlayerRespawn, ExpAccumulated);
+	GetWorldTimerManager().SetTimer(Handle, Delegate, PlayerRespawnDelay, false);
 }
 
 void ASpawner::OnPlayerDie(const int32 ExpAccumulated)
 {
 	if (PlayerLife <= 0)
 	{
+		// game over
 		return;
 	}
-	PlayerCharacter = nullptr;
-	FTimerHandle Handle;
-	const FTimerDelegate Delegate = FTimerDelegate::CreateUObject(this, &ASpawner::SpawnPlayer, ExpAccumulated);
-	GetWorldTimerManager().SetTimer(Handle, Delegate, PlayerRespawnDelay, false);
-}
-
-void ASpawner::SpawnPlayer(const int32 ExpAccumulated)
-{
-	PlayerLife--;
-	const AActor* PlayerStart = UGameplayStatics::GetActorOfClass(GetWorld(), APlayerStart::StaticClass());
-	const FVector Position = PlayerStart->GetActorLocation();
-	PlayerCharacter = GetWorld()->SpawnActor<APlayerCharacter>(PlayerCharacterClass, Position, FRotator::ZeroRotator);
-	PlayerRespawn.Broadcast(PlayerCharacter);
-	if (PlayerExpUpdate.IsBound())
-	{
-		PlayerExpUpdate.Execute(ExpAccumulated);
-	}
-}
-
-void ASpawner::RandomSpawnBoss()
-{
+	DelayedPlayerRespawn(ExpAccumulated);
 }
