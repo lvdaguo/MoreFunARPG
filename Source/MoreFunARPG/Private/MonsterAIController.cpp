@@ -15,10 +15,6 @@ void AMonsterAIController::BeginPlay()
 	Super::BeginPlay();
 
 	RunBehaviorTree(BehaviourTree);
-
-	static const FName PlayerActor(TEXT("PlayerActor"));
-	GetBlackboardComponent()->SetValueAsObject(PlayerActor,
-	                                           GetWorld()->GetFirstPlayerController()->GetPawn());
 }
 
 void AMonsterAIController::Tick(float DeltaSeconds)
@@ -54,6 +50,11 @@ void AMonsterAIController::OnTargetPerceptionUpdated(AActor* Actor, const FAISti
 		static const FName IsPlayerInSight(TEXT("IsPlayerInSight"));
 		GetBlackboardComponent()->SetValueAsBool(IsPlayerInSight,
 		                                         InStimulus.WasSuccessfullySensed());
+
+		// update in case player respawns
+		static const FName PlayerActor(TEXT("PlayerActor"));
+		GetBlackboardComponent()->SetValueAsObject(PlayerActor,
+												GetWorld()->GetFirstPlayerController()->GetPawn());
 	}
 }
 

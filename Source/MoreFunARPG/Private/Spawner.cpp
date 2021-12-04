@@ -1,7 +1,10 @@
 #include "Spawner.h"
 
 #include "MonsterCharacter.h"
+#include "PlayerCharacter.h"
 #include "Components/BoxComponent.h"
+#include "GameFramework/PlayerStart.h"
+#include "Kismet/GameplayStatics.h"
 
 ASpawner::ASpawner()
 {
@@ -21,11 +24,19 @@ void ASpawner::BeginPlay()
 
 	constexpr bool Loop = true;
 	GetWorldTimerManager().SetTimer(SpawnTimerHandle, this, &ASpawner::RandomSpawnMonster, SpawnInterval, Loop);
+
+	PlayerCharacter = GetWorld()->GetFirstPlayerController()->GetPawn<APlayerCharacter>();
+	check(PlayerCharacter != nullptr)
+	PlayerCharacter->PlayerDieEvent().AddUObject(this, &ASpawner::OnPlayerDie);
 }
 
 void ASpawner::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	if (PlayerCharacter != nullptr)
+	{
+		PlayerCamLocationUpdate.ExecuteIfBound(PlayerCharacter->GetCameraWorldLocation());
+	}
 }
 
 FVector ASpawner::GetRandomPointInBox() const
@@ -52,17 +63,47 @@ void ASpawner::RandomSpawnMonster()
 	MonsterCharacter->MonsterDieEvent().AddUObject(this, &ASpawner::OnMonsterDie);
 }
 
-void ASpawner::SpawnHealPotion(const FVector& Position)
+void ASpawner::SpawnHealPotion(const FVector& Position) const
 {
 	GetWorld()->SpawnActor<AHealPotion>(HealthPotionClass, Position, FRotator::ZeroRotator);
-
 }
 
 void ASpawner::OnMonsterDie(const AMonsterCharacter* MonsterCharacter)
 {
 	SpawnHealPotion(MonsterCharacter->GetActorLocation());
-	PlayerExpUpdate.ExecuteIfBound(MonsterCharacter->GetExpWorth());
-	PlayerScoreUpdate.ExecuteIfBound(MonsterCharacter->GetScore());
+	if (PlayerExpUpdate.IsBound())
+	{
+		PlayerExpUpdate.Execute(MonsterCharacter->GetExpWorth());
+	}
+	if (PlayerScoreUpdate.IsBound())
+	{
+		PlayerScoreUpdate.Execute(MonsterCharacter->GetScore());
+	}
+}
+
+void ASpawner::OnPlayerDie(const int32 ExpAccumulated)
+{
+	if (PlayerLife <= 0)
+	{
+		return;
+	}
+	PlayerCharacter = nullptr;
+	FTimerHandle Handle;
+	const FTimerDelegate Delegate = FTimerDelegate::CreateUObject(this, &ASpawner::SpawnPlayer, ExpAccumulated);
+	GetWorldTimerManager().SetTimer(Handle, Delegate, PlayerRespawnDelay, false);
+}
+
+void ASpawner::SpawnPlayer(const int32 ExpAccumulated)
+{
+	PlayerLife--;
+	const AActor* PlayerStart = UGameplayStatics::GetActorOfClass(GetWorld(), APlayerStart::StaticClass());
+	const FVector Position = PlayerStart->GetActorLocation();
+	PlayerCharacter = GetWorld()->SpawnActor<APlayerCharacter>(PlayerCharacterClass, Position, FRotator::ZeroRotator);
+	PlayerRespawn.Broadcast(PlayerCharacter);
+	if (PlayerExpUpdate.IsBound())
+	{
+		PlayerExpUpdate.Execute(ExpAccumulated);
+	}
 }
 
 void ASpawner::RandomSpawnBoss()

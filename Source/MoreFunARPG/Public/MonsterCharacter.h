@@ -27,7 +27,7 @@ protected:
 	
 	// Life Cycle
 	virtual void BeginPlay() override;
-	void BarFacingPlayer() const;
+	void BarFacingTarget(FVector TargetLocation) const;
 	void LerpSpeed(float DeltaTime);
 	virtual void Tick(float DeltaTime) override;
 
@@ -154,6 +154,10 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	virtual void ReceiveDamage(int32 Damage) override;
+
+
+	UFUNCTION()
+	void OnPlayerCamLocationUpdated(FVector PlayerCamLocation);
 
 	FMonsterDie MonsterDie;
 

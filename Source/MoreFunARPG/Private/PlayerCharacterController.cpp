@@ -1,11 +1,16 @@
 #include "PlayerCharacterController.h"
 #include "PlayerCharacter.h"
+#include "Spawner.h"
+#include "Kismet/GameplayStatics.h"
 
 void APlayerCharacterController::BeginPlay()
 {
 	Super::BeginPlay();
 	PlayerCharacter = GetPawn<APlayerCharacter>();
-	check(PlayerCharacter != nullptr)
+
+	ASpawner* Spawner = Cast<ASpawner>(
+		UGameplayStatics::GetActorOfClass(GetWorld(), ASpawner::StaticClass()));
+	Spawner->PlayerRespawnEvent().AddUObject(this, &APlayerCharacterController::OnPlayerRespawned);
 }
 
 
@@ -26,25 +31,24 @@ void APlayerCharacterController::SetupInputComponent()
 	UInputComponent* const Input = InputComponent;
 
 	Input->BindAction(PrimaryAttack,
-		IE_Pressed, this, &APlayerCharacterController::OnPrimaryAttackPressed);
+	                  IE_Pressed, this, &APlayerCharacterController::OnPrimaryAttackPressed);
 	Input->BindAction(Heal,
-		IE_Pressed, this, &APlayerCharacterController::OnHealPressed);
+	                  IE_Pressed, this, &APlayerCharacterController::OnHealPressed);
 	Input->BindAction(Running,
-		IE_Pressed, this, &APlayerCharacterController::OnRunningPressed);
+	                  IE_Pressed, this, &APlayerCharacterController::OnRunningPressed);
 	Input->BindAction(Running,
-		IE_Released, this, &APlayerCharacterController::OnRunningReleased);
+	                  IE_Released, this, &APlayerCharacterController::OnRunningReleased);
 	Input->BindAction(Roll,
-		IE_Pressed, this, &APlayerCharacterController::OnRollPressed);
+	                  IE_Pressed, this, &APlayerCharacterController::OnRollPressed);
 
 	Input->BindAxis(MoveForward,
-		this, &APlayerCharacterController::MoveForward);
+	                this, &APlayerCharacterController::MoveForward);
 	Input->BindAxis(MoveRight,
-		this, &APlayerCharacterController::MoveRight);
+	                this, &APlayerCharacterController::MoveRight);
 	Input->BindAxis(Turn,
-		this, &APlayerCharacterController::Turn);
+	                this, &APlayerCharacterController::Turn);
 	Input->BindAxis(LookUp,
-		this, &APlayerCharacterController::LookUp);
-
+	                this, &APlayerCharacterController::LookUp);
 }
 
 void APlayerCharacterController::OnUnPossess()
@@ -54,9 +58,17 @@ void APlayerCharacterController::OnUnPossess()
 	InputComponent->AxisBindings.Reset();
 }
 
+void APlayerCharacterController::OnPlayerRespawned(APlayerCharacter* RespawnedPlayer)
+{
+	PlayerCharacter->Destroy();
+	Possess(RespawnedPlayer);
+	PlayerCharacter = RespawnedPlayer;
+	SetupInputComponent();
+}
+
 void APlayerCharacterController::OnPrimaryAttackPressed()
 {
-	PlayerCharacter->OnPrimaryAttackPressed();	
+	PlayerCharacter->OnPrimaryAttackPressed();
 }
 
 void APlayerCharacterController::OnHealPressed()
@@ -98,4 +110,3 @@ void APlayerCharacterController::LookUp(const float Value)
 {
 	PlayerCharacter->LookUp(Value);
 }
-

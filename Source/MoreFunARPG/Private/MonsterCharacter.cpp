@@ -1,8 +1,10 @@
 #include "MonsterCharacter.h"
 
 #include "PlayerCharacter.h"
+#include "Spawner.h"
 #include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 
 void AMonsterCharacter::SetupComponent()
@@ -75,17 +77,17 @@ void AMonsterCharacter::BeginPlay()
 	const int32 Index = FMath::RandHelper(RandomMeshPool.Num());
 	GetMesh()->SetSkeletalMesh(RandomMeshPool[Index]);
 
-	PlayerCharacter = GetWorld()->GetFirstPlayerController()->GetPawn<APlayerCharacter>();
-	check(PlayerCharacter != nullptr)
+	ASpawner* Spawner = Cast<ASpawner>(UGameplayStatics::GetActorOfClass(GetWorld(), ASpawner::StaticClass()));
+	Spawner->PlayerCamLocationUpdateEvent().BindUObject(this, &AMonsterCharacter::OnPlayerCamLocationUpdated);
 	
 	TargetMovingSpeed = PatrolSpeed;
 	GetCharacterMovement()->MaxWalkSpeed = TargetMovingSpeed;
 }
 
-void AMonsterCharacter::BarFacingPlayer() const
+void AMonsterCharacter::BarFacingTarget(const FVector TargetLocation) const
 {
 	const FVector Start = HealthBarTransform->GetComponentLocation();
-	const FVector Target = PlayerCharacter->GetCameraWorldLocation();
+	const FVector Target = TargetLocation;
 	const FRotator Rotation = UKismetMathLibrary::FindLookAtRotation(Start, Target);
 	HealthBarTransform->SetWorldRotation(Rotation);
 }
@@ -106,7 +108,6 @@ void AMonsterCharacter::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	BarFacingPlayer();
 	LerpSpeed(DeltaTime);
 }
 
@@ -256,4 +257,9 @@ void AMonsterCharacter::ReceiveDamage(const int32 Damage)
 			OnHit();
 		}
 	}
+}
+
+void AMonsterCharacter::OnPlayerCamLocationUpdated(FVector PlayerCamLocation)
+{
+	BarFacingTarget(PlayerCamLocation);
 }

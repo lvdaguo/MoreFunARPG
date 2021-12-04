@@ -27,4 +27,7 @@ protected:
 	void LookUp(float Value);
 
 	virtual void OnUnPossess() override;
+
+	UFUNCTION()
+	void OnPlayerRespawned(APlayerCharacter* RespawnedPlayer);
 };
