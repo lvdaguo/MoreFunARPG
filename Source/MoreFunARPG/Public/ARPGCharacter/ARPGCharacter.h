@@ -46,9 +46,11 @@ protected:
 	bool bIsDead;
 
 	// Safe Base
-	void ChangeHealthSafe(int32 Diff);
-	void DealDamageSafe(AARPGCharacter* Receiver) const;
-
+	void ChangeHealthBase(int32 Diff);
+	void DealDamageBase(AARPGCharacter* Receiver) const;
+	static bool BeginActionBase(bool& State, bool FailCondition);
+	static void EndActionBase(bool& State);
+	
 	// Virtual Base
 	virtual void Die();
 	virtual void ReceiveDamage(int32 Damage);
@@ -56,7 +58,7 @@ protected:
 
 	// Listener
 	UFUNCTION()
-	void OnHealthChange(const int32 Before, const int32 After);
+	virtual void OnHealthChange(const int32 Before, const int32 After);
 
 	virtual void OnWeaponOverlap(AActor* OtherActor);
 

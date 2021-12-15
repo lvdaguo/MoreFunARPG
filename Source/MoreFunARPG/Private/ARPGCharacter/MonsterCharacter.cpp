@@ -104,14 +104,7 @@ void AMonsterCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	SetupDataFromDataTable();
-
-	// GetWorld()->TimeSeconds;
 	
-	// To DO: better setup by spawner  
-	// if (CurLevelData == nullptr)
-	// {
-	// 	SetupByLevel(1);
-	// }
 	SetupLevelByTime();
 	
 	SetupRandomMesh();
@@ -161,41 +154,24 @@ void AMonsterCharacter::InterruptExistingStates()
 // Behavior Tree Task Helper
 bool AMonsterCharacter::BeginAttack()
 {
-	if (CanAct() == false)
-	{
-		return FAIL;
-	}
-	bIsAttacking = true;
-
-	return SUCCESS;
+	const bool FailCondition = CanAct() == false;
+	return BeginActionBase(bIsAttacking, FailCondition);
 }
 
 void AMonsterCharacter::EndAttack()
 {
-	if (bIsAttacking == false)
-	{
-		return;
-	}
-	bIsAttacking = false;
+	EndActionBase(bIsAttacking);
 }
 
 bool AMonsterCharacter::BeginHealing()
 {
-	if (CanAct() == false || HealPotion <= 0)
-	{
-		return FAIL;
-	}
-	bIsHealing = true;
-	return SUCCESS;
+	const bool FailCondition = CanAct() == false && HealPotion <= 0;
+	return BeginActionBase(bIsHealing, FailCondition);
 }
 
 void AMonsterCharacter::EndHealing()
 {
-	if (bIsHealing == false)
-	{
-		return;
-	}
-	bIsHealing = false;
+	EndActionBase(bIsHealing);
 }
 
 bool AMonsterCharacter::BeginRunning()
@@ -227,32 +203,17 @@ bool AMonsterCharacter::BeginOnHit()
 
 void AMonsterCharacter::EndOnHit()
 {
-	if (bIsOnHit == false)
-	{
-		return;
-	}
-	bIsOnHit = false;
+	EndActionBase(bIsOnHit);
 }
 
 bool AMonsterCharacter::BeginInvincible()
 {
-	if (bIsInvincible)
-	{
-		return FAIL;
-	}
-	
-	bIsInvincible = true;
-
-	return SUCCESS;
+	return BeginActionBase(bIsInvincible, bIsInvincible);
 }
 
 void AMonsterCharacter::EndInvincible()
 {
-	if (bIsInvincible == false)
-	{
-		return;
-	}
-	bIsInvincible = false;
+	EndActionBase(bIsInvincible);
 }
 
 // Weapon
@@ -269,7 +230,7 @@ void AMonsterCharacter::DisableWeapon(UPrimitiveComponent* WeaponHitBox)
 // Override
 void AMonsterCharacter::OnWeaponOverlap(AActor* OtherActor)
 {
-	DealDamageSafe(Cast<APlayerCharacter>(OtherActor));
+	DealDamageBase(Cast<APlayerCharacter>(OtherActor));
 }
 
 void AMonsterCharacter::Die()
@@ -284,7 +245,7 @@ void AMonsterCharacter::Die()
 void AMonsterCharacter::ReceiveHeal()
 {
 	HealPotion--;
-	ChangeHealthSafe(HealAmount);
+	ChangeHealthBase(HealAmount);
 }
 
 void AMonsterCharacter::ReceiveDamage(const int32 Damage)
@@ -295,7 +256,7 @@ void AMonsterCharacter::ReceiveDamage(const int32 Damage)
 	}
 	if (Damage > 0)
 	{
-		ChangeHealthSafe(-1 * Damage);
+		ChangeHealthBase(-1 * Damage);
 		if (bIsDead == false)
 		{
 			OnHit();

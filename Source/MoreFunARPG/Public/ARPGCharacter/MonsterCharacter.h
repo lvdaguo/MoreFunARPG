@@ -5,7 +5,7 @@
 #include "DataTableRow/MonsterDataTableRow.h"
 #include "MonsterCharacter.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FMonsterDie, const class AMonsterCharacter*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FBossDie, const class AMonsterCharacter*);
 
 UCLASS()
 class MOREFUNARPG_API AMonsterCharacter final : public AARPGCharacter
@@ -174,8 +174,8 @@ protected:
 	void OnPlayerCameraLocationUpdated(FVector PlayerCamLocation);
 	
 	// Delegate
-	FMonsterDie MonsterDie;
+	FBossDie MonsterDie;
 
 public:
-	FORCEINLINE FMonsterDie& MonsterDieEvent() { return MonsterDie; }
+	FORCEINLINE FBossDie& MonsterDieEvent() { return MonsterDie; }
 };

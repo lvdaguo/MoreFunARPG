@@ -179,6 +179,7 @@ void APlayerCharacter::Die()
 	if (PlayerLife <= 0)
 	{
 		// game over
+		GameOver.Broadcast();
 	}
 	else
 	{
@@ -211,7 +212,7 @@ void APlayerCharacter::ReceiveDamage(const int32 Damage)
 	const int32 FinalDamage = Damage - GetArmor();
 	if (FinalDamage > 0)
 	{
-		ChangeHealthSafe(-1 * FinalDamage);
+		ChangeHealthBase(-1 * FinalDamage);
 		if (bIsDead == false)
 		{
 			OnHit();
@@ -277,7 +278,7 @@ void APlayerCharacter::UpdateEnergy(const float DeltaTime)
 void APlayerCharacter::ReceiveHeal()
 {
 	CurHealPotion--;
-	ChangeHealthSafe(HealAmount);
+	ChangeHealthBase(HealAmount);
 }
 
 // Listener

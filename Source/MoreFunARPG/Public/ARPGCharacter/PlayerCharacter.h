@@ -4,11 +4,11 @@
 #include "ARPGCharacter.h"
 #include "DataTableRow/PlayerDataTableRow.h"
 #include "Camera/CameraComponent.h"
-#include "GameFramework/Character.h"
 #include "PlayerCharacter.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FPlayerDie);
 DECLARE_MULTICAST_DELEGATE_OneParam(FPlayerCameraLocationUpdate, FVector);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FGameOver);
 
 UCLASS()
 class MOREFUNARPG_API APlayerCharacter final : public AARPGCharacter
@@ -227,6 +227,9 @@ protected:
 	FPlayerDie PlayerDie;
 	FPlayerCameraLocationUpdate PlayerCameraLocationUpdate;
 
+	UPROPERTY(BlueprintAssignable)
+	FGameOver GameOver;
+	
 public:
 	FORCEINLINE FPlayerDie& PlayerDieEvent() { return PlayerDie; }
 	FORCEINLINE FPlayerCameraLocationUpdate& PlayerCameraLocationUpdateEvent()

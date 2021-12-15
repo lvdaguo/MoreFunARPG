@@ -29,7 +29,7 @@ protected:
 
 	// Attribute
 	UPROPERTY(EditDefaultsOnly)
-	float SpawnInterval = 1.0f;
+	float MonsterSpawnInterval = 2.0f;
 
 	UPROPERTY(EditDefaultsOnly)
 	int32 BatchEnemyCount = 1;
@@ -56,6 +56,24 @@ protected:
 	TSubclassOf<class APlayerCharacter> PlayerCharacterClass;
 
 	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class AActor> SceneBlockClass;
+
+	UPROPERTY(EditDefaultsOnly)
+	struct FFloatRange SceneBlockRangeX = FFloatRange(5.0f, 10.0f);
+	
+	UPROPERTY(EditDefaultsOnly)
+	struct FFloatRange SceneBlockRangeY = FFloatRange(5.0f, 10.0f);
+
+	UPROPERTY(EditDefaultsOnly)
+	float SceneBlockPositionZ = 330.0f;
+	
+	UPROPERTY(EditDefaultsOnly)
+	int SceneBlockCount = 10;
+	
+	UPROPERTY(EditDefaultsOnly)
+	float SceneBlockHeight = 4.0f;
+	
+	UPROPERTY(EditDefaultsOnly)
 	float HealPotionDropRate = 0.25;
 	
 	// Component
@@ -67,18 +85,21 @@ protected:
 	class APlayerCharacter* PlayerCharacter;
 
 	struct FBox SpawnBox;
-	struct FTimerHandle SpawnTimerHandle;
+	struct FTimerHandle SceneBlockSpawnTimerHandle;
+	
+	int SpawnMaxFail = 100;
 
 	// Spawn
-	FVector GetRandomPointInBox() const;
-
 	template <class T>
-	T* RandomSpawn(class UClass*);
+	T* RandomSpawnInBox(UClass* ActorClass);
 
-	void SpawnMonster();
-	void SpawnHealPotion(const FVector& Position) const;
+	AActor* SpawnSceneBlockOnce() const;
+	void SpawnBlockEveryTick();
+	
+	void SpawnMonsterOnce();
+	void SpawnHealPotionOnce(const FVector& Position) const;
 	void InvokePlayerRespawn() const;
-	void SpawnBoss();
+	void SpawnBossOnce();
 	
 	// Listener
 	UFUNCTION()

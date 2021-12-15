@@ -20,7 +20,7 @@ void AARPGCharacter::ReceiveDamage(const int32 Damage)
 {
 	if (Damage > 0)
 	{
-		ChangeHealthSafe(-1 * Damage);
+		ChangeHealthBase(-1 * Damage);
 	}
 }
 
@@ -37,14 +37,14 @@ void AARPGCharacter::Die()
 }
 
 // Safe Base
-void AARPGCharacter::ChangeHealthSafe(const int32 Diff)
+void AARPGCharacter::ChangeHealthBase(const int32 Diff)
 {
 	const int32 OriginHealth = CurHealth;
 	CurHealth = FMath::Clamp(CurHealth + Diff, 0, GetMaxHealth());
 	HealthChange.Broadcast(OriginHealth, CurHealth);
 }
 
-void AARPGCharacter::DealDamageSafe(AARPGCharacter* Receiver) const
+void AARPGCharacter::DealDamageBase(AARPGCharacter* Receiver) const
 {
 	if (Receiver == nullptr || Receiver == this)
 	{
@@ -54,10 +54,29 @@ void AARPGCharacter::DealDamageSafe(AARPGCharacter* Receiver) const
 	Receiver->ReceiveDamage(CalculatedDamage);
 }
 
+bool AARPGCharacter::BeginActionBase(bool& State, bool FailCondition)
+{
+	if (FailCondition)
+	{
+		return FAIL;
+	}
+	State = true;
+	return SUCCESS;
+}
+
+void AARPGCharacter::EndActionBase(bool& State)
+{
+	if (State == false)
+	{
+		return;
+	}
+	State = false;
+}
+
 // Listener
 void AARPGCharacter::OnWeaponOverlap(AActor* OtherActor)
 {
-	DealDamageSafe(Cast<AARPGCharacter>(OtherActor));
+	DealDamageBase(Cast<AARPGCharacter>(OtherActor));
 }
 
 void AARPGCharacter::OnHealthChange(const int32 Before, const int32 After)
