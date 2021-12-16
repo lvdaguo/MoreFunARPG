@@ -50,9 +50,6 @@ protected:
 	float PlayerRespawnDelay = 5;
 
 	UPROPERTY(EditDefaultsOnly)
-	float SpawnHeight;
-	
-	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class APlayerCharacter> PlayerCharacterClass;
 
 	UPROPERTY(EditDefaultsOnly)
@@ -95,8 +92,9 @@ protected:
 
 	AActor* SpawnSceneBlockOnce() const;
 	void SpawnBlockEveryTick();
-	
-	void SpawnMonsterOnce();
+
+	void SpawnMonster();
+	AMonsterCharacter* SpawnMonsterOnce();
 	void SpawnHealPotionOnce(const FVector& Position) const;
 	void InvokePlayerRespawn() const;
 	void SpawnBossOnce();

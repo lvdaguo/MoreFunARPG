@@ -16,7 +16,7 @@ ASpawner::ASpawner()
 void ASpawner::StartMonsterSpawnRoutine()
 {
 	FTimerHandle SpawnTimerHandle;
-	GetWorldTimerManager().SetTimer(SpawnTimerHandle, this, &ASpawner::SpawnMonsterOnce, MonsterSpawnInterval, true);
+	GetWorldTimerManager().SetTimer(SpawnTimerHandle, this, &ASpawner::SpawnMonster, MonsterSpawnInterval, true);
 }
 
 void ASpawner::SetupDelegate()
@@ -104,15 +104,26 @@ AActor* ASpawner::SpawnSceneBlockOnce() const
 	return SceneBlock;
 }
 
-void ASpawner::SpawnMonsterOnce()
+void ASpawner::SpawnMonster()
+{
+	for (int i = 0; i < BatchEnemyCount;)
+	{
+		if (SpawnMonsterOnce() != nullptr)
+		{
+			++i;
+		}
+	}
+}
+
+AMonsterCharacter* ASpawner::SpawnMonsterOnce()
 {
 	AMonsterCharacter* const MonsterCharacter = RandomSpawnInBox<AMonsterCharacter>(MonsterClass);
 	// may fail because of collision
-	if (MonsterCharacter == nullptr)
+	if (MonsterCharacter != nullptr)
 	{
-		return;
+		MonsterCharacter->MonsterDieEvent().AddUObject(this, &ASpawner::OnMonsterDie);
 	}
-	MonsterCharacter->MonsterDieEvent().AddUObject(this, &ASpawner::OnMonsterDie);
+	return MonsterCharacter;
 }
 
 void ASpawner::SpawnHealPotionOnce(const FVector& Position) const

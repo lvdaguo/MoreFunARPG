@@ -120,6 +120,8 @@ void AMonsterCharacter::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	UE_LOG(LogTemp, Log, TEXT("monst %d %d %d %d %d"), bIsAttacking, bIsHealing, bIsRunning, bIsOnHit, bIsInvincible)
+	
 	LerpSpeed(DeltaTime);
 }
 
@@ -167,7 +169,7 @@ void AMonsterCharacter::EndAttack()
 
 bool AMonsterCharacter::BeginHealing()
 {
-	const bool FailCondition = CanAct() == false && HealPotion <= 0;
+	const bool FailCondition = CanAct() == false || HealPotion <= 0;
 	return BeginActionBase(bIsHealing, FailCondition);
 }
 

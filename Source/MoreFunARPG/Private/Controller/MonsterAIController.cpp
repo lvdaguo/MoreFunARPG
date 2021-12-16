@@ -30,6 +30,7 @@ void AMonsterAIController::BeginPlay()
 
 	OnPlayerRespawn();
 	SetupDelegate();
+	
 }
 
 void AMonsterAIController::OnPlayerDead()
@@ -50,7 +51,21 @@ void AMonsterAIController::Tick(float DeltaSeconds)
 
 	static const FName IsLowHealth(TEXT("IsLowHealth"));
 	static const FName HasHealthPotion(TEXT("HasHealPotion"));
+	static const FName IsPlayerInSight(TEXT("IsPlayerInSight"));
 
+	const bool bIsPlayerInSight = GetBlackboardComponent()->GetValueAsBool(IsPlayerInSight);
+	if (bIsPlayerInSight)
+	{
+		static const FName MovingPosition(TEXT("MovingPosition"));
+		static const FName PlayerActor(TEXT("PlayerActor"));
+
+		const AActor* PlayerCharacter = Cast<AActor>(GetBlackboardComponent()->GetValueAsObject(PlayerActor));
+		if (PlayerCharacter != nullptr)
+		{
+			GetBlackboardComponent()->SetValueAsVector(MovingPosition, PlayerCharacter->GetActorLocation());
+		}
+	}
+	
 	const float Cur = static_cast<float>(MonsterCharacter->GetCurHealth());
 	const float Max = static_cast<float>(MonsterCharacter->GetMaxHealth());
 	const float HealthPercent = Cur / Max;
