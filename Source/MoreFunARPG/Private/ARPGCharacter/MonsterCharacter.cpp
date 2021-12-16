@@ -62,6 +62,8 @@ void AMonsterCharacter::SetupState()
 
 void AMonsterCharacter::SetupDelegate()
 {
+	Super::SetupDelegate();
+	
 	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(
 		UGameplayStatics::GetActorOfClass(GetWorld(), APlayerCharacter::StaticClass()));
 	PlayerCharacter->PlayerCameraLocationUpdateEvent().AddUObject(this, &AMonsterCharacter::OnPlayerCameraLocationUpdated);
@@ -256,6 +258,8 @@ void AMonsterCharacter::ReceiveDamage(const int32 Damage)
 	}
 	if (Damage > 0)
 	{
+		DamageReceived.Broadcast(Damage);
+		
 		ChangeHealthBase(-1 * Damage);
 		if (bIsDead == false)
 		{

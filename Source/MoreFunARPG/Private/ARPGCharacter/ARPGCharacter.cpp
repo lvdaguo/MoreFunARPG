@@ -1,9 +1,16 @@
 #include "ARPGCharacter/ARPGCharacter.h"
 
+#include "Blueprint/UserWidget.h"
+
 // Constructor
 AARPGCharacter::AARPGCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
+}
+
+void AARPGCharacter::SetupDelegate()
+{
+	HealthChange.AddUObject(this, &AARPGCharacter::OnHealthChange);
 }
 
 // Life Cycle
@@ -12,7 +19,7 @@ void AARPGCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	SetupState();
-	HealthChange.AddUObject(this, &AARPGCharacter::OnHealthChange);
+	SetupDelegate();
 }
 
 // Virtual Base
@@ -21,6 +28,7 @@ void AARPGCharacter::ReceiveDamage(const int32 Damage)
 	if (Damage > 0)
 	{
 		ChangeHealthBase(-1 * Damage);
+		DamageReceived.Broadcast(Damage);
 	}
 }
 

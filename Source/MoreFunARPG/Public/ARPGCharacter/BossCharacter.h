@@ -25,7 +25,7 @@ protected:
 	// Setup Runtime
 	virtual void SetupState() override;
 	void SetupDataFromDataTable();
-	void SetupDelegate();
+	virtual void SetupDelegate() override;
 
 	// Level Setup
 	void SetupLevelByTime();

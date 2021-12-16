@@ -5,6 +5,7 @@
 #include "ARPGCharacter.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FHealthChange, int32, int32);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDamageReceived, int32, Damage);
 
 // Self Define Macro
 #define SUCCESS true
@@ -16,14 +17,15 @@ class MOREFUNARPG_API AARPGCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
-	// Constructor
 public:
+	// Constructor
 	AARPGCharacter();
 
 protected:
 	// Setup Default
 	virtual void SetupState() { bIsDead = false; }
-	
+	virtual void SetupDelegate();
+
 	// Life Cycle
 	virtual void BeginPlay() override;
 
@@ -45,6 +47,13 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsDead;
 
+	// Damage Text
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UUserWidget> DamageTextClass;
+
+	UPROPERTY(EditDefaultsOnly)
+	bool CanShowDamageText;
+
 	// Safe Base
 	void ChangeHealthBase(int32 Diff);
 	void DealDamageBase(AARPGCharacter* Receiver) const;
@@ -62,13 +71,16 @@ protected:
 
 	virtual void OnWeaponOverlap(AActor* OtherActor);
 
-	// Getter
 public:
+	// Getter
 	virtual int32 GetMaxHealth() const { return UNIMPLEMENTED; }
 
 protected:
 	// Delegate
 	FHealthChange HealthChange;
+
+	UPROPERTY(BlueprintAssignable)
+	FDamageReceived DamageReceived;
 	
 public:
 	FORCEINLINE FHealthChange& HealthChangeEvent() { return HealthChange; }

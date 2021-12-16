@@ -34,7 +34,7 @@ protected:
 	void SetupDataFromDataTable();
 	void SetupCombo();
 	void SetupRuntimeValues();
-	void SetupDelegate();
+	virtual void SetupDelegate() override;
 
 	// Component
 	UPROPERTY(VisibleAnywhere)

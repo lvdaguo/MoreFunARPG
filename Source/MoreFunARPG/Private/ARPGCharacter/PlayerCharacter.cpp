@@ -92,6 +92,7 @@ void APlayerCharacter::SetupRuntimeValues()
 
 void APlayerCharacter::SetupDelegate()
 {
+	Super::SetupDelegate();
 	ASpawner* Spawner = Cast<ASpawner>(UGameplayStatics::GetActorOfClass(GetWorld(), ASpawner::StaticClass()));
 	Spawner->PlayerExpUpdateEvent().AddUObject(this, &APlayerCharacter::OnExpUpdated);
 	Spawner->PlayerRespawnEvent().AddUObject(this, &APlayerCharacter::OnPlayerRespawn);

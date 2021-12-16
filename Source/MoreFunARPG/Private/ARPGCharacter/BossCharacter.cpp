@@ -60,6 +60,8 @@ void ABossCharacter::SetupState()
 
 void ABossCharacter::SetupDelegate()
 {
+	Super::SetupDelegate();
+	
 	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(
 		UGameplayStatics::GetActorOfClass(GetWorld(), APlayerCharacter::StaticClass()));
 	PlayerCharacter->PlayerCameraLocationUpdateEvent().AddUObject(this, &ABossCharacter::OnPlayerCameraLocationUpdated);

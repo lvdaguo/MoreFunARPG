@@ -9,9 +9,6 @@ class AMoreFunARPGGameMode final : public AGameModeBase
 {
 	GENERATED_BODY()
 
-protected:
-	int32 PlayerScore;
-
 public:
 	AMoreFunARPGGameMode();
 
