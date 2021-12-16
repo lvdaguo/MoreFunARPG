@@ -195,10 +195,10 @@ void AMonsterCharacter::EndRunning()
 
 bool AMonsterCharacter::BeginOnHit()
 {
-	if (bIsOnHit)
-	{
-		return FAIL;
-	}
+	// if (bIsOnHit)
+	// {
+	// 	return FAIL;
+	// }
 	InterruptExistingStates();
 	bIsOnHit = true;
 	
