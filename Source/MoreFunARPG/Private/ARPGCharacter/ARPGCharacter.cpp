@@ -48,7 +48,7 @@ void AARPGCharacter::Die()
 void AARPGCharacter::ChangeHealthBase(const int32 Diff)
 {
 	const int32 OriginHealth = CurHealth;
-	CurHealth = FMath::Clamp(CurHealth + Diff, 0, GetMaxHealth());
+	CurHealth = FMath::Clamp(CurHealth + Diff, 0, MaxHealth);
 	HealthChange.Broadcast(OriginHealth, CurHealth);
 }
 

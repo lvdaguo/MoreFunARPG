@@ -60,6 +60,7 @@ void APlayerCharacter::SetupDataFromDataTable()
 	CurExpGained = 0;
 	MaxLevel = AllLevelData.Num();
 	CurLevel = 1;
+	MaxHealth = CurLevelData->MaxHealth;
 }
 
 void APlayerCharacter::SetupCombo()
@@ -82,7 +83,7 @@ void APlayerCharacter::SetupState()
 
 void APlayerCharacter::SetupRuntimeValues()
 {
-	CurHealth = GetMaxHealth();
+	CurHealth = MaxHealth;
 	TargetMovingSpeed = WalkSpeed;
 	VerticalInput = 0.0f;
 	CurEnergy = MaxEnergy;
@@ -107,7 +108,6 @@ void APlayerCharacter::BeginPlay()
 	SetupDataFromDataTable();
 	SetupCombo();
 	SetupRuntimeValues();
-	SetupDelegate();
 }
 
 void APlayerCharacter::Tick(const float DeltaTime)
@@ -135,7 +135,8 @@ void APlayerCharacter::LevelUp()
 	}
 	const int32 CurLevelIndex = CurLevel - 1;
 	CurLevelData = AllLevelData[CurLevelIndex + 1];
-	CurHealth = GetMaxHealth();
+	MaxHealth = CurLevelData->MaxHealth;
+	CurHealth = MaxHealth;
 	CurLevel++;
 }
 

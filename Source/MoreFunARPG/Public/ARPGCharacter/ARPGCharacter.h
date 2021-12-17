@@ -47,12 +47,8 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsDead;
 
-	// Damage Text
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<class UUserWidget> DamageTextClass;
-
-	UPROPERTY(EditDefaultsOnly)
-	bool CanShowDamageText;
+	UPROPERTY(BlueprintReadOnly)
+	int32 MaxHealth;
 
 	// Safe Base
 	void ChangeHealthBase(int32 Diff);
@@ -71,9 +67,8 @@ protected:
 
 	virtual void OnWeaponOverlap(AActor* OtherActor);
 
-public:
 	// Getter
-	virtual int32 GetMaxHealth() const { return UNIMPLEMENTED; }
+	// virtual int32 GetMaxHealth() const { return UNIMPLEMENTED; }
 
 protected:
 	// Delegate

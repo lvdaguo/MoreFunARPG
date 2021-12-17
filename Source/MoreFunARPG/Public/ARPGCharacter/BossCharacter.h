@@ -70,15 +70,31 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	float ChargeForce = 100;
+
+	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	float MeleeRange = 300.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	float MidRange = 600.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	float ChargeCoolDownTime = 10.0f;
 	
 	float LerpTime;
 	float TargetMovingSpeed;
 
 	// States
 	bool bIsInvincible;
-	bool bIsStun;
+
+	bool bIsStunning;
+
+	UPROPERTY(BlueprintReadOnly)
 	bool bIsMeleeAttacking;
+
+	UPROPERTY(BlueprintReadOnly)
 	bool bIsRangeAttacking;
+
+	UPROPERTY(BlueprintReadOnly)
 	bool bIsCharging;
 
 	void InterruptExistingStates();
@@ -86,13 +102,13 @@ protected:
 	// Condition
 	FORCEINLINE bool CanAct() const
 	{
-		return (bIsMeleeAttacking || bIsCharging || bIsRangeAttacking || bIsStun) == false;
+		return (bIsMeleeAttacking || bIsCharging || bIsRangeAttacking || bIsStunning) == false;
 	}
 
 public:
 	// Getter
-	UFUNCTION(BlueprintCallable)
-	virtual int32 GetMaxHealth() const override { return CurLevelData->MaxHealth; }
+	// UFUNCTION(BlueprintCallable)
+	// virtual int32 GetMaxHealth() const override { return CurLevelData->MaxHealth; }
 
 	FORCEINLINE int32 GetMeleeDamage() const { return CurLevelData->MeleeDamage; }
 	FORCEINLINE int32 GetRangeDamage() const { return CurLevelData->RangeDamage; }
@@ -101,7 +117,13 @@ public:
 	FORCEINLINE float GetLowHealthPercent() const { return LowHealthPercent; }
 	FORCEINLINE int32 GetExpWorth() const { return CurLevelData->ExpWorth; }
 	FORCEINLINE int32 GetScore() const { return Score; }
+	FORCEINLINE float GetMeleeRange() const { return MeleeRange; }
+	FORCEINLINE float GetMidRange() const { return MidRange; }
+	FORCEINLINE bool IsStunning() const { return bIsStunning; }
 
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE float GetChargeCoolDownTime() const { return ChargeCoolDownTime; }
+	
 protected:
 	// Behavior Tree Task Helper
 	UFUNCTION(BlueprintCallable)

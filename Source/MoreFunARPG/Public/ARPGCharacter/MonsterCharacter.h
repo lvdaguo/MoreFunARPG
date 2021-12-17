@@ -5,7 +5,7 @@
 #include "DataTableRow/MonsterDataTableRow.h"
 #include "MonsterCharacter.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FBossDie, const class AMonsterCharacter*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FMonsterDie, const class AMonsterCharacter*);
 
 UCLASS()
 class MOREFUNARPG_API AMonsterCharacter final : public AARPGCharacter
@@ -98,10 +98,8 @@ protected:
 
 public:
 	// Getter
-	UFUNCTION(BlueprintCallable)
-	virtual int32 GetMaxHealth() const override { return CurLevelData->MaxHealth; }
-	
 	FORCEINLINE int32 GetCurHealth() const { return CurHealth; }
+	FORCEINLINE int32 GetMaxHealth() const { return MaxHealth; }
  	FORCEINLINE float GetLowHealthPercent() const { return LowHealthPercent; } 
 	FORCEINLINE int32 GetHealthPotion() const { return HealPotion; }
 	FORCEINLINE int32 GetExpWorth() const { return CurLevelData->ExpWorth; }
@@ -174,8 +172,8 @@ protected:
 	void OnPlayerCameraLocationUpdated(FVector PlayerCamLocation);
 	
 	// Delegate
-	FBossDie MonsterDie;
+	FMonsterDie MonsterDie;
 
 public:
-	FORCEINLINE FBossDie& MonsterDieEvent() { return MonsterDie; }
+	FORCEINLINE FMonsterDie& MonsterDieEvent() { return MonsterDie; }
 };

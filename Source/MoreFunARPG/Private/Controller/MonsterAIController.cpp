@@ -20,6 +20,10 @@ void AMonsterAIController::SetupDelegate()
 
 	ASpawner* Spawner = Cast<ASpawner>(UGameplayStatics::GetActorOfClass(GetWorld(), ASpawner::StaticClass()));
 	Spawner->PlayerRespawnEvent().AddUObject(this, &AMonsterAIController::OnPlayerRespawn);
+
+	static const FName PlayerActor(TEXT("PlayerActor"));
+	GetBlackboardComponent()->SetValueAsObject(PlayerActor,
+											GetWorld()->GetFirstPlayerController()->GetPawn());
 }
 
 void AMonsterAIController::BeginPlay()
@@ -30,7 +34,6 @@ void AMonsterAIController::BeginPlay()
 
 	OnPlayerRespawn();
 	SetupDelegate();
-	
 }
 
 void AMonsterAIController::OnPlayerDead()
@@ -92,11 +95,6 @@ void AMonsterAIController::OnTargetPerceptionUpdated(AActor* Actor, const FAISti
 		static const FName IsPlayerInSight(TEXT("IsPlayerInSight"));
 		GetBlackboardComponent()->SetValueAsBool(IsPlayerInSight,
 		                                         InStimulus.WasSuccessfullySensed());
-
-		// update in case player respawns
-		static const FName PlayerActor(TEXT("PlayerActor"));
-		GetBlackboardComponent()->SetValueAsObject(PlayerActor,
-		                                           GetWorld()->GetFirstPlayerController()->GetPawn());
 	}
 }
 

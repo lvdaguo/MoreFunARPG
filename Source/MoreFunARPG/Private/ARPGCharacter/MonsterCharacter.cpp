@@ -96,7 +96,8 @@ void AMonsterCharacter::SetupByLevel(const int32 Level)
 	CurLevel = Level;
 	const int32 LevelIndex = Level - 1;
 	CurLevelData = AllLevelData[LevelIndex];
-	CurHealth = GetMaxHealth();
+	MaxHealth = CurLevelData->MaxHealth;
+	CurHealth = MaxHealth;
 	UE_LOG(LogTemp, Log, TEXT("Monster Lv: %d"), Level);
 }
 
@@ -110,7 +111,6 @@ void AMonsterCharacter::BeginPlay()
 	SetupLevelByTime();
 	
 	SetupRandomMesh();
-	SetupDelegate();
 	
 	TargetMovingSpeed = PatrolSpeed;
 	GetCharacterMovement()->MaxWalkSpeed = TargetMovingSpeed;
@@ -119,8 +119,6 @@ void AMonsterCharacter::BeginPlay()
 void AMonsterCharacter::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	UE_LOG(LogTemp, Log, TEXT("monst %d %d %d %d %d"), bIsAttacking, bIsHealing, bIsRunning, bIsOnHit, bIsInvincible)
 	
 	LerpSpeed(DeltaTime);
 }
@@ -195,10 +193,6 @@ void AMonsterCharacter::EndRunning()
 
 bool AMonsterCharacter::BeginOnHit()
 {
-	// if (bIsOnHit)
-	// {
-	// 	return FAIL;
-	// }
 	InterruptExistingStates();
 	bIsOnHit = true;
 	

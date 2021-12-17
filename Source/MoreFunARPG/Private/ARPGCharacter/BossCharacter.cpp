@@ -55,7 +55,7 @@ void ABossCharacter::SetupState()
 	bIsRangeAttacking = false;
 	bIsCharging = false;
 	bIsInvincible = false;
-	bIsStun = false;
+	bIsStunning = false;
 }
 
 void ABossCharacter::SetupDelegate()
@@ -88,7 +88,8 @@ void ABossCharacter::SetupByLevel(const int32 Level)
 	CurLevel = Level;
 	const int32 LevelIndex = Level - 1;
 	CurLevelData = AllLevelData[LevelIndex];
-	CurHealth = GetMaxHealth();
+	MaxHealth = CurLevelData->MaxHealth;
+	CurHealth = MaxHealth;
 	UE_LOG(LogTemp, Log, TEXT("Boss Lv: %d"), Level);
 }
 
@@ -100,7 +101,6 @@ void ABossCharacter::BeginPlay()
 	SetupDataFromDataTable();
 	
 	SetupLevelByTime();
-	SetupDelegate();
 	
 	TargetMovingSpeed = Speed;
 	GetCharacterMovement()->MaxWalkSpeed = TargetMovingSpeed;
@@ -164,19 +164,19 @@ void ABossCharacter::EndCharge()
 
 bool ABossCharacter::BeginStun()
 {
-	if (bIsStun)
+	if (bIsStunning)
 	{
 		return FAIL;
 	}
 	InterruptExistingStates();
-	bIsStun = true;
+	bIsStunning = true;
 	
 	return SUCCESS;
 }
 
 void ABossCharacter::EndStun()
 {
-	EndActionBase(bIsStun);
+	EndActionBase(bIsStunning);
 }
 
 bool ABossCharacter::BeginInvincible()
@@ -254,6 +254,7 @@ void ABossCharacter::ReceiveDamage(const int32 Damage)
 	}
 	if (Damage > 0)
 	{
+		DamageReceived.Broadcast(Damage);
 		ChangeHealthBase(-1 * Damage);
 	}
 }
@@ -267,9 +268,11 @@ void ABossCharacter::OnPlayerCameraLocationUpdated(FVector PlayerCamLocation)
 void ABossCharacter::OnHealthChange(const int32 Before, const int32 After)
 {
 	Super::OnHealthChange(Before, After);
-	for (const int32 Trigger : StunTriggerList)
+	const float BeforePercent = static_cast<float>(Before) / MaxHealth;
+	const float AfterPercent = static_cast<float>(After) / MaxHealth;
+	for (const float Trigger : StunTriggerList)
 	{
-		if (Before >= Trigger && After < Trigger)
+		if (BeforePercent >= Trigger && AfterPercent < Trigger)
 		{
 			OnStun();
 			break;

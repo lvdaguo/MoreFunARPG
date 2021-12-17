@@ -149,8 +149,8 @@ protected:
 	FORCEINLINE bool IsGettingForwardInput() const { return VerticalInput > 0; }
 
 	// Getter
-	UFUNCTION(BlueprintCallable)
-	virtual int32 GetMaxHealth() const override { return CurLevelData->MaxHealth; }
+	// UFUNCTION(BlueprintCallable)
+	// virtual int32 GetMaxHealth() const override { return CurLevelData->MaxHealth; }
 
 	UFUNCTION(BlueprintCallable)
 	int32 GetArmor() const { return CurLevelData->Armor; }
