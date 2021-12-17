@@ -241,7 +241,7 @@ void ABossCharacter::Die()
 {
 	Super::Die();
 	HealthBar->SetVisibility(false);
-	BossDie.Broadcast(this);
+	BossDie.Broadcast();
 	BossDie.Clear();
 	SetLifeSpan(DeadBodyExistTime);
 }
@@ -263,7 +263,7 @@ void ABossCharacter::ReceiveDamage(const int32 Damage)
 void ABossCharacter::OnPlayerCameraLocationUpdated(FVector PlayerCamLocation)
 {
 	BarFacingTarget(PlayerCamLocation);
-}
+} 
 
 void ABossCharacter::OnHealthChange(const int32 Before, const int32 After)
 {

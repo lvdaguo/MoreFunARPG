@@ -1,4 +1,6 @@
 #include "Spawner.h"
+
+#include "ARPGCharacter/BossCharacter.h"
 #include "ARPGCharacter/MonsterCharacter.h"
 #include "ARPGCharacter/PlayerCharacter.h"
 #include "Components/BoxComponent.h"
@@ -41,7 +43,7 @@ void ASpawner::SpawnBlockEveryTick()
 	{
 		return;
 	}
-	
+
 	if (SceneBlockCount > 0)
 	{
 		AActor* const SceneBlock = SpawnSceneBlockOnce();
@@ -75,11 +77,11 @@ AActor* ASpawner::SpawnSceneBlockOnce() const
 {
 	FVector Position = FMath::RandPointInBox(SpawnBox);
 	Position.Z = SceneBlockPositionZ;
-	
+
 	const FRotator Rotation = FRotator(0.0f, FMath::FRand() * 360.0f, 0.0f);
 
 	// check collision with default scale (biggest width and length)
- 	AActor* const SceneBlock = GetWorld()->SpawnActor<AActor>(SceneBlockClass, Position, Rotation);
+	AActor* const SceneBlock = GetWorld()->SpawnActor<AActor>(SceneBlockClass, Position, Rotation);
 
 	// if collision test passed
 	if (SceneBlock != nullptr)
@@ -134,16 +136,36 @@ void ASpawner::SpawnHealPotionOnce(const FVector& Position) const
 	}
 }
 
-void ASpawner::SpawnBossOnce()
-{
-}
-
 // Listener
 void ASpawner::OnMonsterDie(const AMonsterCharacter* MonsterCharacter)
 {
 	SpawnHealPotionOnce(MonsterCharacter->GetActorLocation());
 	PlayerExpUpdate.Broadcast(MonsterCharacter->GetExpWorth());
 	PlayerScoreUpdate.Broadcast(MonsterCharacter->GetScore());
+
+	DeadMonsterCount++;
+	if (DeadMonsterCount >= BossSpawnTriggerCount)
+	{
+		DeadMonsterCount = 0;
+
+		if (bHasBossInScene)
+		{
+			return;
+		}
+		ABossCharacter* const BossCharacter = RandomSpawnInBox<ABossCharacter>(BossClass);
+		if (BossCharacter == nullptr)
+		{
+			return;
+		}
+		bHasBossInScene = true;
+		BossCharacter->BossDieEvent().AddLambda([BossCharacter, this]()
+		{
+			PlayerExpUpdate.Broadcast(BossCharacter->GetExpWorth());
+			PlayerScoreUpdate.Broadcast(BossCharacter->GetScore());
+			bHasBossInScene = false;
+		});
+
+	}
 }
 
 void ASpawner::InvokePlayerRespawn() const

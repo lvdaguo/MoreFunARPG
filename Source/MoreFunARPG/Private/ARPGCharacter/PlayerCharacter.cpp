@@ -21,6 +21,10 @@ APlayerCharacter::APlayerCharacter()
 	SetupComponent();
 	SetupAttachment();
 	SetupComponentDefaultValues();
+
+	// just set once
+	// don't reset when respawn
+	PlayerScore = 0;
 }
 
 // Setup Default
@@ -95,9 +99,17 @@ void APlayerCharacter::SetupDelegate()
 {
 	Super::SetupDelegate();
 	ASpawner* Spawner = Cast<ASpawner>(UGameplayStatics::GetActorOfClass(GetWorld(), ASpawner::StaticClass()));
-	Spawner->PlayerExpUpdateEvent().AddUObject(this, &APlayerCharacter::OnExpUpdated);
+
+	Spawner->PlayerExpUpdateEvent().AddLambda([this](const int32 Exp)
+	{
+		ReceiveExp(Exp);
+	});
+	Spawner->PlayerScoreUpdateEvent().AddLambda([this](const int32 Score)
+	{
+		PlayerScore += Score;
+	});
+	
 	Spawner->PlayerRespawnEvent().AddUObject(this, &APlayerCharacter::OnPlayerRespawn);
-	Spawner->PlayerScoreUpdateEvent().AddUObject(this, &APlayerCharacter::OnPlayerScoreUpdated);
 }
 
 // Life Cycle
@@ -225,7 +237,7 @@ void APlayerCharacter::ReceiveDamage(const int32 Damage)
 // Running 
 void APlayerCharacter::ExamineRunning()
 {
-	if (bIsRunning && IsFreeOfAction() && IsMovingForward() == false)
+	if (bIsRunning && IsInNullActionState() && IsFacingForward() == false)
 	{
 		EndRunning();
 	}
@@ -253,7 +265,7 @@ void APlayerCharacter::LerpSpeed(const float DeltaTime)
 
 void APlayerCharacter::UpdateEnergy(const float DeltaTime)
 {
-	if (bIsRunning && IsMovingForward() && IsFreeOfAction())
+	if (bIsRunning && IsFacingForward() && IsInNullActionState())
 	{
 		// attack can be interrupted now but is still playing the end of the attack animation
 		if (bIsComboActive && IsPlayingNetworkedRootMotionMontage())
@@ -284,11 +296,6 @@ void APlayerCharacter::ReceiveHeal()
 }
 
 // Listener
-void APlayerCharacter::OnExpUpdated(const int32 Exp)
-{
-	ReceiveExp(Exp);
-}
-
 void APlayerCharacter::OnHealthPotionOverlap(AHealPotion*Potion)
 {
 	if (Potion != nullptr)
@@ -307,11 +314,6 @@ void APlayerCharacter::OnPlayerRespawn()
 
 	const AActor* Start = UGameplayStatics::GetActorOfClass(GetWorld(), APlayerStart::StaticClass());	
 	SetActorLocation(Start->GetActorLocation());
-}
-
-void APlayerCharacter::OnPlayerScoreUpdated(int32 Score)
-{
-	PlayerScore += Score;
 }
 
 // Action Blueprint Implementation Helper

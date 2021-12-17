@@ -5,7 +5,7 @@
 #include "DataTableRow/BossDataTableRow.h"
 #include "BossCharacter.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FBossDie, const class ABossCharacter*);
+DECLARE_MULTICAST_DELEGATE(FBossDie);
 
 UCLASS()
 class MOREFUNARPG_API ABossCharacter final : public AARPGCharacter

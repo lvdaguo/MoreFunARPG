@@ -16,14 +16,14 @@ class MOREFUNARPG_API ASpawner final : public AActor
 {
 	GENERATED_BODY()
 
-	// Constructor
 public:
+	// Constructor
 	ASpawner();
 	void StartMonsterSpawnRoutine();
 	void SetupDelegate();
 
-	// Life Cycle
 protected:
+	// Life Cycle
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
@@ -43,6 +43,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class AARPGCharacter> BossClass;
 
+	UPROPERTY(EditDefaultsOnly)
+	int32 BossSpawnTriggerCount = 5;
+	
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class AHealPotion> HealthPotionClass;
 
@@ -85,6 +88,8 @@ protected:
 	struct FTimerHandle SceneBlockSpawnTimerHandle;
 	
 	int SpawnMaxFail = 100;
+	int DeadMonsterCount = 0;
+	bool bHasBossInScene = false;
 
 	// Spawn
 	template <class T>
@@ -97,7 +102,6 @@ protected:
 	AMonsterCharacter* SpawnMonsterOnce();
 	void SpawnHealPotionOnce(const FVector& Position) const;
 	void InvokePlayerRespawn() const;
-	void SpawnBossOnce();
 	
 	// Listener
 	UFUNCTION()

@@ -1,5 +1,3 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
 using UnrealBuildTool;
 
 public class MoreFunARPG : ModuleRules
@@ -16,8 +14,6 @@ public class MoreFunARPG : ModuleRules
 			"HeadMountedDisplay",
 			"UMG"
 		});
-
-		// PrivateDependencyModuleNames.AddRange(new string[] { });
 
 		PrivateDependencyModuleNames.AddRange(new[]
 		{

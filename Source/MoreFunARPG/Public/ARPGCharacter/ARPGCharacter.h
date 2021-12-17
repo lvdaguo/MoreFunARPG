@@ -32,7 +32,7 @@ protected:
 	// Data Table
 	UPROPERTY(EditDefaultsOnly)
 	class UDataTable* LevelDataTable;
-	
+
 	// Level Attribute
 	UPROPERTY(BlueprintReadOnly)
 	int32 MaxLevel;
@@ -55,7 +55,7 @@ protected:
 	void DealDamageBase(AARPGCharacter* Receiver) const;
 	static bool BeginActionBase(bool& State, bool FailCondition);
 	static void EndActionBase(bool& State);
-	
+
 	// Virtual Base
 	virtual void Die();
 	virtual void ReceiveDamage(int32 Damage);
@@ -76,7 +76,7 @@ protected:
 
 	UPROPERTY(BlueprintAssignable)
 	FDamageReceived DamageReceived;
-	
+
 public:
 	FORCEINLINE FHealthChange& HealthChangeEvent() { return HealthChange; }
 };

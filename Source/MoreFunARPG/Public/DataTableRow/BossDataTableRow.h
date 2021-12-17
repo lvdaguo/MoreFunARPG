@@ -7,7 +7,7 @@ USTRUCT(BlueprintType)
 struct FBossDataTableRow : public FTableRowBase
 {
 	GENERATED_BODY()
-	
+
 	// Level Attribute
 	UPROPERTY(EditDefaultsOnly, Category="Level")
 	int32 ExpWorth = 500; // Exp gained by other players when destroyed

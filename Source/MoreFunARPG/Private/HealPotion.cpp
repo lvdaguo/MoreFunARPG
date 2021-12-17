@@ -14,37 +14,32 @@ AHealPotion::AHealPotion()
 void AHealPotion::SetupComponent()
 {
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	HitBox = CreateDefaultSubobject<UBoxComponent>(TEXT("HitBox"));
+	CollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("HitBox"));
 }
 
 void AHealPotion::SetupAttachment()
 {
-	RootComponent = HitBox;
+	RootComponent = CollisionBox;
 	Mesh->SetupAttachment(RootComponent);
 }
 
 // Delay Pickup
-void AHealPotion::DelayPickup()
+void AHealPotion::ActivateCollisionDelayed()
 {
-	HitBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	// disable collision and enable it after a while
+	// to avoid being picked up by player instantly
+	
+	CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	FTimerHandle ActivateHandle;
-	GetWorldTimerManager().SetTimer(ActivateHandle, this,
-	                                &AHealPotion::ActivateOverlap, ActivateDelay, false);
-}
-
-void AHealPotion::ActivateOverlap() const
-{
-	HitBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GetWorldTimerManager().SetTimer(ActivateHandle, FTimerDelegate::CreateLambda([this]()
+	{
+		CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	}), CollisionActivationDelay, false);
 }
 
 // Life Cycle
 void AHealPotion::BeginPlay()
 {
 	Super::BeginPlay();
-	DelayPickup();
-}
-
-void AHealPotion::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
+	ActivateCollisionDelayed();
 }

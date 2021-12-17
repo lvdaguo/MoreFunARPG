@@ -3,8 +3,3 @@
 AMoreFunARPGGameMode::AMoreFunARPGGameMode()
 {
 }
-
-void AMoreFunARPGGameMode::BeginPlay()
-{
-	Super::BeginPlay();
-}

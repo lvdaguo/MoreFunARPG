@@ -11,7 +11,4 @@ class AMoreFunARPGGameMode final : public AGameModeBase
 
 public:
 	AMoreFunARPGGameMode();
-
-protected:
-	virtual void BeginPlay() override;
 };

@@ -9,31 +9,29 @@ class MOREFUNARPG_API AHealPotion final : public AActor
 {
 	GENERATED_BODY()
 
-	// Constructor
 public:
+	// Constructor
 	AHealPotion();
 
-	// Setup Default
 protected:
+	// Setup Default
 	void SetupComponent();
 	void SetupAttachment();
 
 	// Life Cycle
 	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaTime) override;
 	
-	// Delay Pickup	
-	void DelayPickup();
-	void ActivateOverlap() const;
+	// Delay Pickup
+	void ActivateCollisionDelayed();
 
 	// Component
 	UPROPERTY(EditDefaultsOnly)
 	class UStaticMeshComponent* Mesh;
 
 	UPROPERTY(EditDefaultsOnly)
-	class UBoxComponent* HitBox;
+	class UBoxComponent* CollisionBox;
 
 	// Property
 	UPROPERTY(EditDefaultsOnly)
-	float ActivateDelay = 0.5f;
+	float CollisionActivationDelay = 0.5f;
 };

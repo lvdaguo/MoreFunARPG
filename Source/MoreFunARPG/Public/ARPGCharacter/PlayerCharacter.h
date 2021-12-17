@@ -15,12 +15,12 @@ class MOREFUNARPG_API APlayerCharacter final : public AARPGCharacter
 {
 	GENERATED_BODY()
 
-	// Constructor
 public:
+	// Constructor
 	APlayerCharacter();
 
-	// Life Cycle
 protected:
+	// Life Cycle
 	virtual void BeginPlay() override;
 	virtual void Tick(const float DeltaTime) override;
 
@@ -46,53 +46,55 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	class UCameraComponent* FollowCamera;
 
-	// Attribute
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attribute")
+	// Movement Attribute
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Movement")
 	float MaxEnergy = 100.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	UPROPERTY(EditDefaultsOnly, Category="Movement")
 	float RunningEnergyCost = 10.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	UPROPERTY(EditDefaultsOnly, Category="Movement")
 	float RunningEnergyRefuel = 20.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	TArray<float> ComboDamageRateList = {1.0f, 1.5f, 1.25f, 3.0f};
-
-	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	float ComboResetDelayTime = 0.8f;
-
-	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	float WalkSpeed = 600.0f;
-
-	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	float RunningSpeed = 1000.0f;
-
-	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	float SwitchRunningTime = 2.0f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attribute")
-	float DefaultInvincibleTime = 2.0f;
-
-	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	UPROPERTY(EditDefaultsOnly, Category="Movement")
+	float RollEnergyCost = 10.0f;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Movement")
 	float HalfRunningAngle = 60.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	float RollEnergyCost = 10.0f;
+	UPROPERTY(EditDefaultsOnly, Category="Movement")
+	float WalkSpeed = 600.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	UPROPERTY(EditDefaultsOnly, Category="Movement")
+	float RunningSpeed = 1000.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category="Movement")
+	float SwitchRunningTime = 2.0f;
+
+	// Combo Attribute
+	UPROPERTY(EditDefaultsOnly, Category="Combo")
+	TArray<float> ComboDamageRateList = {1.0f, 1.5f, 1.25f, 3.0f};
+
+	UPROPERTY(EditDefaultsOnly, Category="Combo")
+	float ComboResetDelayTime = 0.8f;
+
+	// Health Attribute
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Health")
+	float DefaultInvincibleTime = 2.0f;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Health")
 	int32 DefaultHealPotion = 1;
 
-	UPROPERTY(EditDefaultsOnly, Category="Attribute")
+	UPROPERTY(EditDefaultsOnly, Category="Health")
 	int32 HealAmount = 50;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attribute")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Health")
 	int32 PlayerLife = 3;
 
-	UPROPERTY(BlueprintReadOnly)
-	int32 PlayerScore = 0;
-
 	// Runtime Member
+	UPROPERTY(BlueprintReadOnly)
+	int32 PlayerScore;
+	
 	UPROPERTY(BlueprintReadOnly)
 	float CurEnergy;
 
@@ -134,12 +136,12 @@ protected:
 	// Condition
 	FORCEINLINE bool CanAct() const { return (bIsAttacking || bIsHealing || bIsRolling || bIsOnHit) == false; };
 
-	FORCEINLINE bool IsFreeOfAction() const
+	FORCEINLINE bool IsInNullActionState() const
 	{
 		return CanAct() && bIsOnHit == false && bIsRolling == false && bIsComboActive == false;
 	}
 
-	FORCEINLINE bool IsMovingForward() const
+	FORCEINLINE bool IsFacingForward() const
 	{
 		const FVector MovingDirection = GetVelocity().GetSafeNormal();
 		return FVector::DotProduct(MovingDirection, GetActorForwardVector())
@@ -149,46 +151,32 @@ protected:
 	FORCEINLINE bool IsGettingForwardInput() const { return VerticalInput > 0; }
 
 	// Getter
-	// UFUNCTION(BlueprintCallable)
-	// virtual int32 GetMaxHealth() const override { return CurLevelData->MaxHealth; }
-
 	UFUNCTION(BlueprintCallable)
 	int32 GetArmor() const { return CurLevelData->Armor; }
 
 	UFUNCTION(BlueprintCallable)
 	int32 GetExpNeededToNextLevel() const { return CurLevelData->ExpNeededToNextLevel; }
 
-public:
-	FORCEINLINE FVector GetCameraWorldLocation() const { return FollowCamera->GetComponentLocation(); }
-
-protected:
 	int32 GetNormalDamage() const { return CurLevelData->NormalDamage; }
 	int32 GetCriticalDamage() const { return CurLevelData->CriticalDamage; }
 	float GetCriticalHitRate() const { return CurLevelData->CriticalHitRate; }
 
+public:
+	FORCEINLINE FVector GetCameraWorldLocation() const { return FollowCamera->GetComponentLocation(); }
+
+protected:
 	// Override
-	virtual int32 GetCalculatedDamage() const override;
-	void CalculateDamage();
-	
 	UFUNCTION(BlueprintCallable)
 	virtual void OnWeaponOverlap(AActor* OtherActor) override;
-
-	virtual void Die() override;
+	
+	virtual int32 GetCalculatedDamage() const override;
+	void CalculateDamage();
 
 	UFUNCTION(BlueprintCallable)
 	virtual void ReceiveDamage(int32 Damage) override;
-
-	// Heal
-	UFUNCTION(BlueprintCallable)
-	void ReceiveHeal();
-
-	// Weapon
-	UFUNCTION(BlueprintCallable)
-	void EnableWeapon(class UPrimitiveComponent* WeaponHitBox);
-
-	UFUNCTION(BlueprintCallable)
-	void DisableWeapon(class UPrimitiveComponent* WeaponHitBox);
-
+	
+	virtual void Die() override;
+	
 	// Level
 	void LevelUp();
 	void ReceiveExp(int32 Exp);
@@ -212,16 +200,7 @@ protected:
 
 	// Listener
 	UFUNCTION()
-	void OnExpUpdated(const int32 Exp);
-
-	UFUNCTION(BlueprintCallable)
-	void OnHealthPotionOverlap(class AHealPotion* Potion);
-
-	UFUNCTION()
 	void OnPlayerRespawn();
-
-	UFUNCTION()
-	void OnPlayerScoreUpdated(int32 Score);
 
 	// Delegate
 	FPlayerDie PlayerDie;
@@ -273,6 +252,21 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void EndInvincible();
+
+	// Heal
+	UFUNCTION(BlueprintCallable)
+	void ReceiveHeal();
+
+	// Weapon
+	UFUNCTION(BlueprintCallable)
+	void EnableWeapon(class UPrimitiveComponent* WeaponHitBox);
+
+	UFUNCTION(BlueprintCallable)
+	void DisableWeapon(class UPrimitiveComponent* WeaponHitBox);
+
+	// Health Potion
+	UFUNCTION(BlueprintCallable)
+	void OnHealthPotionOverlap(class AHealPotion* Potion);
 
 	// Blueprint Implementable Event
 	UFUNCTION(BlueprintImplementableEvent)
