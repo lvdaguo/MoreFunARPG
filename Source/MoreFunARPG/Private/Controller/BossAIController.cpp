@@ -21,13 +21,13 @@ void ABossAIController::SetupDelegate()
 {
 	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(
 		UGameplayStatics::GetActorOfClass(GetWorld(), APlayerCharacter::StaticClass()));
-	PlayerCharacter->PlayerDieEvent().AddLambda([this]()
+	PlayerDieHandle = PlayerCharacter->PlayerDieEvent().AddLambda([this]()
 	{
 		BB_SET_BOOL(BossAIController::IsPlayerDead, true)
 	});
 
 	ASpawner* Spawner = Cast<ASpawner>(UGameplayStatics::GetActorOfClass(GetWorld(), ASpawner::StaticClass()));
-	Spawner->PlayerRespawnEvent().AddLambda([this]()
+	PlayerRespawnHandle = Spawner->PlayerRespawnEvent().AddLambda([this]()
 	{
 		BB_SET_BOOL(BossAIController::IsPlayerDead, false)
 	});
@@ -85,6 +85,15 @@ void ABossAIController::StartChargeCoolDownCountDown()
 	}), BossCharacter->GetChargeCoolDownTime(), false);
 }
 
+void ABossAIController::RemoveListener() const
+{
+	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(
+		UGameplayStatics::GetActorOfClass(GetWorld(), APlayerCharacter::StaticClass()));
+	ASpawner* Spawner = Cast<ASpawner>(UGameplayStatics::GetActorOfClass(GetWorld(), ASpawner::StaticClass()));
+	PlayerCharacter->PlayerDieEvent().Remove(PlayerDieHandle);
+	Spawner->PlayerRespawnEvent().Remove(PlayerRespawnHandle);
+}
+
 // Override
 void ABossAIController::OnPossess(APawn* InPawn)
 {
@@ -95,5 +104,6 @@ void ABossAIController::OnPossess(APawn* InPawn)
 void ABossAIController::OnUnPossess()
 {
 	Super::OnUnPossess();
+	RemoveListener();
 	Destroy();
 }

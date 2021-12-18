@@ -29,6 +29,9 @@ protected:
 	UPROPERTY()
 	class AMonsterCharacter* MonsterCharacter;
 
+	class FDelegateHandle PlayerRespawnHandle;
+	class FDelegateHandle PlayerDieHandle;
+
 	// Life Cycle
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
@@ -36,7 +39,8 @@ protected:
 	// Listener
 	UFUNCTION(BlueprintCallable)
 	void OnTargetPerceptionUpdated(class AActor* Actor, const struct FAIStimulus& InStimulus);
-
+	void RemoveListener() const;
+	
 	// Override
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override;

@@ -1,11 +1,11 @@
 #include "Controller/MonsterAIController.h"
 
-#include "Spawner.h"
-#include "ARPGCharacter/MonsterCharacter.h"
-#include "ARPGCharacter/PlayerCharacter.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Perception/AIPerceptionComponent.h"
+#include "Spawner.h"
+#include "ARPGCharacter/MonsterCharacter.h"
+#include "ARPGCharacter/PlayerCharacter.h"
 #include "GlobalNameText.h"
 #include "MacroAIHelper.h"
 
@@ -21,16 +21,15 @@ void AMonsterAIController::SetupDelegate()
 	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(
 		UGameplayStatics::GetActorOfClass(GetWorld(), APlayerCharacter::StaticClass()));
 
-	PlayerCharacter->PlayerDieEvent().AddLambda([this]()
+	PlayerDieHandle = PlayerCharacter->PlayerDieEvent().AddLambda([this]()
 	{
-		BB_SET_BOOL(MonsterAIController::IsPlayerDead, true)
+		BB_SET_BOOL(MonsterAIController::IsPlayerDead, true);
 	});
 	
 	ASpawner* Spawner = Cast<ASpawner>(UGameplayStatics::GetActorOfClass(GetWorld(), ASpawner::StaticClass()));
-
-	Spawner->PlayerRespawnEvent().AddLambda([this]()
+	PlayerRespawnHandle = Spawner->PlayerRespawnEvent().AddLambda([this]()
 	{
-		BB_SET_BOOL(MonsterAIController::IsPlayerDead, false)
+		BB_SET_BOOL(MonsterAIController::IsPlayerDead, false);
 	});
 	
 	BB_SET_OBJECT(MonsterAIController::PlayerActor, PlayerCharacter)
@@ -76,6 +75,16 @@ void AMonsterAIController::OnTargetPerceptionUpdated(AActor* Actor, const FAISti
 	}
 }
 
+void AMonsterAIController::RemoveListener() const
+{
+	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(
+		UGameplayStatics::GetActorOfClass(GetWorld(), APlayerCharacter::StaticClass()));
+	ASpawner* Spawner = Cast<ASpawner>(UGameplayStatics::GetActorOfClass(GetWorld(), ASpawner::StaticClass()));
+	PlayerCharacter->PlayerDieEvent().Remove(PlayerDieHandle);
+	Spawner->PlayerRespawnEvent().Remove(PlayerRespawnHandle);
+}
+
+// Override
 void AMonsterAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
@@ -92,5 +101,7 @@ void AMonsterAIController::OnPossess(APawn* InPawn)
 void AMonsterAIController::OnUnPossess()
 {
 	Super::OnUnPossess();
+	RemoveListener();
+	
 	Destroy();
 }

@@ -19,7 +19,8 @@ class MOREFUNARPG_API ASpawner final : public AActor
 public:
 	// Constructor
 	ASpawner();
-	void StartMonsterSpawnRoutine();
+
+	// Setup Runtime
 	void SetupDelegate();
 
 protected:
@@ -89,6 +90,8 @@ protected:
 	bool bHasBossInScene = false;
 
 	// Spawn
+	void StartMonsterSpawnRoutine();
+
 	template <class T>
 	T* RandomSpawnInBox(UClass* ActorClass);
 
@@ -98,7 +101,6 @@ protected:
 	void SpawnMonster();
 	AMonsterCharacter* SpawnMonsterOnce();
 	void SpawnHealPotionOnce(const FVector& Position) const;
-	void InvokePlayerRespawn() const;
 	
 	// Listener
 	UFUNCTION()

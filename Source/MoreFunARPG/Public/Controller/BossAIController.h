@@ -24,6 +24,9 @@ protected:
 	UPROPERTY()
 	class ABossCharacter* BossCharacter;
 
+	class FDelegateHandle PlayerDieHandle;
+	class FDelegateHandle PlayerRespawnHandle;
+	
 	// Life Cycle
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
@@ -32,7 +35,8 @@ public:
 	// Task Helper
 	UFUNCTION(BlueprintCallable)
 	void StartChargeCoolDownCountDown();
-
+	void RemoveListener() const;
+	
 protected:
 	// Override
 	virtual void OnPossess(APawn* InPawn) override;

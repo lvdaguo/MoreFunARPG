@@ -292,6 +292,7 @@ void APlayerCharacter::OnPlayerRespawn()
 	SetActorEnableCollision(true);
 	SetupRuntimeValues();
 	SetActorLocation(SpawnPosition);
+	GetCharacterMovement()->ClearAccumulatedForces();
 }
 
 // Action Blueprint Implementation Helper

@@ -15,12 +15,6 @@ ASpawner::ASpawner()
 }
 
 // Setup Default
-void ASpawner::StartMonsterSpawnRoutine()
-{
-	FTimerHandle SpawnTimerHandle;
-	GetWorldTimerManager().SetTimer(SpawnTimerHandle, this, &ASpawner::SpawnMonster, MonsterSpawnInterval, true);
-}
-
 void ASpawner::SetupDelegate()
 {
 	PlayerCharacter = GetWorld()->GetFirstPlayerController()->GetPawn<APlayerCharacter>();
@@ -61,11 +55,16 @@ void ASpawner::SpawnBlockEveryTick()
 void ASpawner::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 	SpawnBlockEveryTick();
 }
 
 // Spawn Operation
+void ASpawner::StartMonsterSpawnRoutine()
+{
+	FTimerHandle SpawnTimerHandle;
+	GetWorldTimerManager().SetTimer(SpawnTimerHandle, this, &ASpawner::SpawnMonster, MonsterSpawnInterval, true);
+}
+
 template <class T>
 T* ASpawner::RandomSpawnInBox(UClass* ActorClass)
 {
@@ -147,7 +146,6 @@ void ASpawner::OnMonsterDie(const AMonsterCharacter* MonsterCharacter)
 	if (DeadMonsterCount >= BossSpawnTriggerCount)
 	{
 		DeadMonsterCount = 0;
-
 		if (bHasBossInScene)
 		{
 			return;
@@ -164,19 +162,16 @@ void ASpawner::OnMonsterDie(const AMonsterCharacter* MonsterCharacter)
 			PlayerScoreUpdate.Broadcast(BossCharacter->GetScoreWorth());
 			bHasBossInScene = false;
 		});
-
 	}
-}
-
-void ASpawner::InvokePlayerRespawn() const
-{
-	PlayerRespawn.Broadcast();
 }
 
 void ASpawner::DelayedPlayerRespawn()
 {
 	FTimerHandle Handle;
-	const FTimerDelegate Delegate = FTimerDelegate::CreateUObject(this, &ASpawner::InvokePlayerRespawn);
+	const FTimerDelegate Delegate = FTimerDelegate::CreateLambda([this]()
+	{
+		PlayerRespawn.Broadcast();
+	});
 	GetWorldTimerManager().SetTimer(Handle, Delegate, PlayerRespawnDelay, false);
 }
 
