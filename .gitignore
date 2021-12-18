@@ -5,6 +5,7 @@ Saved
 .idea
 .vscode
 .vs
+Build
 *.VC.db
 *.opensdf
 *.opendb
