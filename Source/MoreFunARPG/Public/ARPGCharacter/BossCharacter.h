@@ -57,7 +57,7 @@ protected:
 	float LowHealthPercent = 0.4f;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
-	int32 Score = 500;
+	int32 ScoreWorth = 500;
 
 	UPROPERTY(EditDefaultsOnly, Category="Attribute")
 	float DeadBodyExistTime = 10.0f;
@@ -85,7 +85,6 @@ protected:
 
 	// States
 	bool bIsInvincible;
-
 	bool bIsStunning;
 
 	UPROPERTY(BlueprintReadOnly)
@@ -107,16 +106,13 @@ protected:
 
 public:
 	// Getter
-	// UFUNCTION(BlueprintCallable)
-	// virtual int32 GetMaxHealth() const override { return CurLevelData->MaxHealth; }
-
 	FORCEINLINE int32 GetMeleeDamage() const { return CurLevelData->MeleeDamage; }
 	FORCEINLINE int32 GetRangeDamage() const { return CurLevelData->RangeDamage; }
 	FORCEINLINE int32 GetChargeDamage() const { return CurLevelData->ChargeDamage; }
 	FORCEINLINE int32 GetCurHealth() const { return CurHealth; }
 	FORCEINLINE float GetLowHealthPercent() const { return LowHealthPercent; }
 	FORCEINLINE int32 GetExpWorth() const { return CurLevelData->ExpWorth; }
-	FORCEINLINE int32 GetScore() const { return Score; }
+	FORCEINLINE int32 GetScoreWorth() const { return ScoreWorth; }
 	FORCEINLINE float GetMeleeRange() const { return MeleeRange; }
 	FORCEINLINE float GetMidRange() const { return MidRange; }
 	FORCEINLINE bool IsStunning() const { return bIsStunning; }
@@ -175,14 +171,14 @@ protected:
 
 	// Weapon
 	UFUNCTION(BlueprintCallable)
-	static void EnableWeapon(class UPrimitiveComponent* WeaponHitBox);
+	virtual void EnableWeapon(class UPrimitiveComponent* WeaponHitBox) override;
 
 	UFUNCTION(BlueprintCallable)
-	static void DisableWeapon(class UPrimitiveComponent* WeaponHitBox);
+	virtual void DisableWeapon(class UPrimitiveComponent* WeaponHitBox) override;
 
 	// Listener
 	UFUNCTION(BlueprintCallable)
-	void OnChargeOverlap(class AARPGCharacter* Character);
+	void OnChargeOverlap(class AActor* OtherActor);
 
 	UFUNCTION()
 	void OnPlayerCameraLocationUpdated(FVector PlayerCamLocation);

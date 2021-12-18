@@ -35,9 +35,6 @@ protected:
 	int32 BatchEnemyCount = 1;
 
 	UPROPERTY(EditDefaultsOnly)
-	float EnemyLevelUpInterval = 30.0f;
-
-	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class AMonsterCharacter> MonsterClass;
 
 	UPROPERTY(EditDefaultsOnly)

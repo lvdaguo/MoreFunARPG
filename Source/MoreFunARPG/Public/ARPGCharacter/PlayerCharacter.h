@@ -73,7 +73,7 @@ protected:
 
 	// Combo Attribute
 	UPROPERTY(EditDefaultsOnly, Category="Combo")
-	TArray<float> ComboDamageRateList = {1.0f, 1.5f, 1.25f, 3.0f};
+	TArray<float> ComboDamageRates = {1.0f, 1.5f, 1.25f, 3.0f};
 
 	UPROPERTY(EditDefaultsOnly, Category="Combo")
 	float ComboResetDelayTime = 0.8f;
@@ -94,6 +94,8 @@ protected:
 	// Runtime Member
 	UPROPERTY(BlueprintReadOnly)
 	int32 PlayerScore;
+
+	FVector SpawnPosition;
 	
 	UPROPERTY(BlueprintReadOnly)
 	float CurEnergy;
@@ -259,10 +261,10 @@ public:
 
 	// Weapon
 	UFUNCTION(BlueprintCallable)
-	void EnableWeapon(class UPrimitiveComponent* WeaponHitBox);
+	virtual void EnableWeapon(class UPrimitiveComponent* WeaponHitBox) override;
 
 	UFUNCTION(BlueprintCallable)
-	void DisableWeapon(class UPrimitiveComponent* WeaponHitBox);
+	virtual void DisableWeapon(class UPrimitiveComponent* WeaponHitBox) override;
 
 	// Health Potion
 	UFUNCTION(BlueprintCallable)

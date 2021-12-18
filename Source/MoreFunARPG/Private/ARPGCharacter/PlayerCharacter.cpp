@@ -11,8 +11,6 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 
-DEFINE_LOG_CATEGORY_STATIC(LogPlayerCharacter, Log, All)
-
 // Constructor
 APlayerCharacter::APlayerCharacter()
 {
@@ -44,8 +42,6 @@ void APlayerCharacter::SetupComponentDefaultValues() const
 {
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, -90.0f), FQuat(FRotator(0.0f, -90.0f, 0.0f)));
 
-	SpringArm->SetupAttachment(GetMesh());
-
 	SpringArm->bUsePawnControlRotation = true;
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
@@ -70,7 +66,7 @@ void APlayerCharacter::SetupDataFromDataTable()
 void APlayerCharacter::SetupCombo()
 {
 	CurCombo = 0;
-	MaxCombo = ComboDamageRateList.Num();
+	MaxCombo = ComboDamageRates.Num();
 }
 
 void APlayerCharacter::SetupState()
@@ -108,7 +104,7 @@ void APlayerCharacter::SetupDelegate()
 	{
 		PlayerScore += Score;
 	});
-	
+
 	Spawner->PlayerRespawnEvent().AddUObject(this, &APlayerCharacter::OnPlayerRespawn);
 }
 
@@ -120,6 +116,9 @@ void APlayerCharacter::BeginPlay()
 	SetupDataFromDataTable();
 	SetupCombo();
 	SetupRuntimeValues();
+
+	const AActor* Start = UGameplayStatics::GetActorOfClass(GetWorld(), APlayerStart::StaticClass());
+	SpawnPosition = Start->GetActorLocation();
 }
 
 void APlayerCharacter::Tick(const float DeltaTime)
@@ -132,7 +131,7 @@ void APlayerCharacter::Tick(const float DeltaTime)
 	{
 		return;
 	}
-	
+
 	ExamineRunning();
 	LerpSpeed(DeltaTime);
 	UpdateEnergy(DeltaTime);
@@ -154,8 +153,6 @@ void APlayerCharacter::LevelUp()
 
 void APlayerCharacter::ReceiveExp(const int32 Exp)
 {
-	check(Exp >= 0)
-
 	CurExpGained += Exp;
 	while (CurExpGained >= GetExpNeededToNextLevel())
 	{
@@ -206,7 +203,7 @@ void APlayerCharacter::CalculateDamage()
 {
 	const bool IsCriticalHit = FMath::FRand() <= GetCriticalHitRate();
 	int32 Damage = IsCriticalHit ? GetCriticalDamage() : GetNormalDamage();
-	Damage *= ComboDamageRateList[CurCombo];
+	Damage *= ComboDamageRates[CurCombo];
 	CalculatedDamage = Damage;
 }
 
@@ -288,32 +285,13 @@ void APlayerCharacter::UpdateEnergy(const float DeltaTime)
 	}
 }
 
-// Heal
-void APlayerCharacter::ReceiveHeal()
-{
-	CurHealPotion--;
-	ChangeHealthBase(HealAmount);
-}
-
 // Listener
-void APlayerCharacter::OnHealthPotionOverlap(AHealPotion*Potion)
-{
-	if (Potion != nullptr)
-	{
-		CurHealPotion++;
-		Potion->Destroy();
-	}
-}
-
 void APlayerCharacter::OnPlayerRespawn()
 {
 	ResetStates();
-	
 	SetActorEnableCollision(true);
 	SetupRuntimeValues();
-
-	const AActor* Start = UGameplayStatics::GetActorOfClass(GetWorld(), APlayerStart::StaticClass());	
-	SetActorLocation(Start->GetActorLocation());
+	SetActorLocation(SpawnPosition);
 }
 
 // Action Blueprint Implementation Helper
@@ -323,7 +301,6 @@ bool APlayerCharacter::BeginRunning()
 	{
 		return FAIL;
 	}
-	UE_LOG(LogPlayerCharacter, Log, TEXT("OnBeginRunning"))
 
 	bIsRunning = true;
 	TargetMovingSpeed = RunningSpeed;
@@ -338,7 +315,7 @@ void APlayerCharacter::EndRunning()
 	{
 		return;
 	}
-	UE_LOG(LogPlayerCharacter, Log, TEXT("OnEndRunning"))
+
 	bIsRunning = false;
 	TargetMovingSpeed = WalkSpeed;
 	LerpTime = 0.0f;
@@ -352,12 +329,10 @@ bool APlayerCharacter::BeginPrimaryAttack(int32& OutComboAnimIndex)
 		return FAIL;
 	}
 
-	UE_LOG(LogPlayerCharacter, Log, TEXT("OnBeginPrimaryAttack"))
-
 	bIsAttacking = true;
 
 	CalculateDamage();
-	
+
 	// cancel combo reset
 	GetWorldTimerManager().ClearTimer(ComboResetTimerHandle);
 	OutComboAnimIndex = CurCombo;
@@ -371,39 +346,25 @@ void APlayerCharacter::EndPrimaryAttack()
 	{
 		return;
 	}
-	UE_LOG(LogPlayerCharacter, Log, TEXT("OnEndPrimaryAttack"))
 
 	bIsAttacking = false;
 	bIsComboActive = true;
 	GoToNextCombo();
 
 	// reset combo after some time
-	constexpr bool bLoop = false;
 	GetWorldTimerManager().SetTimer(ComboResetTimerHandle, this,
-	                                &APlayerCharacter::ResetCombo, ComboResetDelayTime, bLoop);
+	                                &APlayerCharacter::ResetCombo, ComboResetDelayTime, false);
 }
 
 bool APlayerCharacter::BeginHealing()
 {
-	if (CanAct() == false || CurHealPotion <= 0)
-	{
-		return FAIL;
-	}
-	UE_LOG(LogPlayerCharacter, Log, TEXT("OnBeginHealing"))
-	bIsHealing = true;
-
-	return SUCCESS;
+	const bool FailCondition = CanAct() == false || CurHealPotion <= 0;
+	return BeginActionBase(bIsHealing, FailCondition);
 }
 
 void APlayerCharacter::EndHealing()
 {
-	if (bIsHealing == false)
-	{
-		return;
-	}
-	UE_LOG(LogPlayerCharacter, Log, TEXT("OnEndHealing"))
-
-	bIsHealing = false;
+	EndActionBase(bIsHealing);
 }
 
 bool APlayerCharacter::BeginRolling()
@@ -412,9 +373,6 @@ bool APlayerCharacter::BeginRolling()
 	{
 		return FAIL;
 	}
-
-	UE_LOG(LogPlayerCharacter, Log, TEXT("OnBeginRoll"))
-
 	// interrupt from other states
 	EndHealing();
 	EndPrimaryAttack();
@@ -429,13 +387,7 @@ bool APlayerCharacter::BeginRolling()
 
 void APlayerCharacter::EndRolling()
 {
-	if (bIsRolling == false)
-	{
-		return;
-	}
-	UE_LOG(LogPlayerCharacter, Log, TEXT("OnEndRoll"))
-
-	bIsRolling = false;
+	EndActionBase(bIsRolling);
 }
 
 bool APlayerCharacter::BeginOnHit()
@@ -449,18 +401,14 @@ bool APlayerCharacter::BeginOnHit()
 	}
 	EndHealing();
 	EndRolling();
-	
+
 	bIsOnHit = true;
 	return SUCCESS;
 }
 
 void APlayerCharacter::EndOnHit()
 {
-	if (bIsOnHit == false)
-	{
-		return;
-	}
-	bIsOnHit = false;
+	EndActionBase(bIsOnHit);
 }
 
 bool APlayerCharacter::BeginInvincible()
@@ -483,6 +431,34 @@ void APlayerCharacter::EndInvincible()
 	}
 	bIsInvincible = false;
 	OnInvincibleEnd();
+}
+
+// Heal
+void APlayerCharacter::ReceiveHeal()
+{
+	CurHealPotion--;
+	ChangeHealthBase(HealAmount);
+}
+
+// Weapon
+void APlayerCharacter::EnableWeapon(UPrimitiveComponent* WeaponHitBox)
+{
+	Super::EnableWeapon(WeaponHitBox);
+}
+
+void APlayerCharacter::DisableWeapon(UPrimitiveComponent* WeaponHitBox)
+{
+	Super::DisableWeapon(WeaponHitBox);
+}
+
+void APlayerCharacter::OnHealthPotionOverlap(AHealPotion* Potion)
+{
+	// if cast from blueprint not fail
+	if (Potion != nullptr)
+	{
+		CurHealPotion++;
+		Potion->Destroy();
+	}
 }
 
 // Axis
@@ -519,15 +495,4 @@ void APlayerCharacter::Turn(const float Value)
 void APlayerCharacter::LookUp(const float Value)
 {
 	AddControllerPitchInput(Value);
-}
-
-// Weapon
-void APlayerCharacter::EnableWeapon(UPrimitiveComponent* WeaponHitBox)
-{
-	WeaponHitBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-}
-
-void APlayerCharacter::DisableWeapon(UPrimitiveComponent* WeaponHitBox)
-{
-	WeaponHitBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }

@@ -161,7 +161,7 @@ void ASpawner::OnMonsterDie(const AMonsterCharacter* MonsterCharacter)
 		BossCharacter->BossDieEvent().AddLambda([BossCharacter, this]()
 		{
 			PlayerExpUpdate.Broadcast(BossCharacter->GetExpWorth());
-			PlayerScoreUpdate.Broadcast(BossCharacter->GetScore());
+			PlayerScoreUpdate.Broadcast(BossCharacter->GetScoreWorth());
 			bHasBossInScene = false;
 		});
 

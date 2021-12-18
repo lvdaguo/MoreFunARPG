@@ -1,94 +1,91 @@
 #include "Controller/BossAIController.h"
 
 #include "Controller/MonsterAIController.h"
-
 #include "Spawner.h"
 #include "ARPGCharacter/BossCharacter.h"
 #include "ARPGCharacter/PlayerCharacter.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Perception/AIPerceptionComponent.h"
+#include "GlobalNameText.h"
+#include "MacroAIHelper.h"
 
+// Constructor
 ABossAIController::ABossAIController()
 {
+	PrimaryActorTick.bCanEverTick = true;
 }
 
+// Setup Runtime
 void ABossAIController::SetupDelegate()
 {
 	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(
 		UGameplayStatics::GetActorOfClass(GetWorld(), APlayerCharacter::StaticClass()));
-	check(PlayerCharacter != nullptr)
-	PlayerCharacter->PlayerDieEvent().AddUObject(this, &ABossAIController::OnPlayerDead);
+	PlayerCharacter->PlayerDieEvent().AddLambda([this]()
+	{
+		BB_SET_BOOL(BossAIController::IsPlayerDead, true)
+	});
 
 	ASpawner* Spawner = Cast<ASpawner>(UGameplayStatics::GetActorOfClass(GetWorld(), ASpawner::StaticClass()));
-	Spawner->PlayerRespawnEvent().AddUObject(this, &ABossAIController::OnPlayerRespawn);
+	Spawner->PlayerRespawnEvent().AddLambda([this]()
+	{
+		BB_SET_BOOL(BossAIController::IsPlayerDead, false)
+	});
 }
 
+// Life Cycle
 void ABossAIController::BeginPlay()
 {
 	Super::BeginPlay();
 
 	RunBehaviorTree(BehaviourTree);
 
-	OnPlayerRespawn();
+	BB_SET_BOOL(BossAIController::IsPlayerDead, false)
 	SetupDelegate();
 
 	AActor* PlayerCharacter = UGameplayStatics::GetActorOfClass(GetWorld(), APlayerCharacter::StaticClass());
-	GetBlackboardComponent()->SetValueAsObject(TEXT("PlayerActor"), PlayerCharacter);
-
-	GetBlackboardComponent()->SetValueAsBool(TEXT("IsChargeReady"), true);
-}
-
-void ABossAIController::OnPlayerDead()
-{
-	static const FName IsPlayerDead(TEXT("IsPlayerDead"));
-	GetBlackboardComponent()->SetValueAsBool(IsPlayerDead, true);
-}
-
-void ABossAIController::OnPlayerRespawn()
-{
-	static const FName IsPlayerDead(TEXT("IsPlayerDead"));
-	GetBlackboardComponent()->SetValueAsBool(IsPlayerDead, false);
-}
-
-void ABossAIController::StartChargeCoolDownCountDown()
-{
-	FTimerHandle TimerHandle;
-	GetWorldTimerManager().SetTimer(TimerHandle, this, &ABossAIController::SetChargeReady, BossCharacter->GetChargeCoolDownTime(), false);
-}
-
-void ABossAIController::SetChargeReady()
-{
-	GetBlackboardComponent()->SetValueAsBool(TEXT("IsChargeReady"), true);
+	BB_SET_OBJECT(BossAIController::PlayerActor, PlayerCharacter)
+	BB_SET_BOOL(BossAIController::IsChargeReady, true)
 }
 
 void ABossAIController::Tick(const float DeltaSeconds)
 {
+	using namespace BossAIController;
 	Super::Tick(DeltaSeconds);
 
-	const AActor* PlayerCharacter = Cast<AActor>(GetBlackboardComponent()->GetValueAsObject(TEXT("PlayerActor")));
+	const AActor* PlayerCharacter = Cast<AActor>(GetBlackboardComponent()->GetValueAsObject(PlayerActor));
 	const float Distance = (BossCharacter->GetActorLocation() - PlayerCharacter->GetActorLocation()).Size();
 
-	GetBlackboardComponent()->SetValueAsBool(TEXT("IsStunning"), BossCharacter->IsStunning());
-	
-	UE_LOG(LogTemp, Log, TEXT("Boss AI %f %f %f"), Distance, BossCharacter->GetMeleeRange(), BossCharacter->GetMidRange())
+	BB_SET_BOOL(IsStunning, BossCharacter->IsStunning())
+
 	if (Distance < BossCharacter->GetMeleeRange())
 	{
-		GetBlackboardComponent()->SetValueAsBool(TEXT("IsCloseRange"), true);
-		GetBlackboardComponent()->SetValueAsBool(TEXT("IsMidRange"), false);
+		BB_SET_BOOL(IsCloseRange, true)
+		BB_SET_BOOL(IsMidRange, false)
 	}
 	else if (Distance < BossCharacter->GetMidRange())
 	{
-		GetBlackboardComponent()->SetValueAsBool(TEXT("IsMidRange"), true);
-		GetBlackboardComponent()->SetValueAsBool(TEXT("IsCloseRange"), false);
+		BB_SET_BOOL(IsCloseRange, false)
+		BB_SET_BOOL(IsMidRange, true)
 	}
 	else
 	{
-		GetBlackboardComponent()->SetValueAsBool(TEXT("IsCloseRange"), false);
-		GetBlackboardComponent()->SetValueAsBool(TEXT("IsMidRange"), false);
+		BB_SET_BOOL(IsCloseRange, false)
+		BB_SET_BOOL(IsMidRange, false)
 	}
 }
 
+// Task Helper
+void ABossAIController::StartChargeCoolDownCountDown()
+{
+	FTimerHandle TimerHandle;
+	GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this]()
+	{
+		BB_SET_BOOL(BossAIController::IsChargeReady, true)
+	}), BossCharacter->GetChargeCoolDownTime(), false);
+}
+
+// Override
 void ABossAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);

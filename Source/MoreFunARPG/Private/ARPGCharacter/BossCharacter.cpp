@@ -192,25 +192,47 @@ void ABossCharacter::EndInvincible()
 // Weapon
 void ABossCharacter::EnableWeapon(UPrimitiveComponent* WeaponHitBox)
 {
-	WeaponHitBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	if (bIsCharging)
+	{
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	}
+	Super::EnableWeapon(WeaponHitBox);
 }
 
 void ABossCharacter::DisableWeapon(UPrimitiveComponent* WeaponHitBox)
 {
-	WeaponHitBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if (bIsCharging)
+	{
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+	}
+	Super::DisableWeapon(WeaponHitBox);
 }
 
-void ABossCharacter::OnChargeOverlap(AARPGCharacter* Character)
+void ABossCharacter::OnChargeOverlap(AActor* OtherActor)
 {
-	if (Character == this)
+	if (OtherActor == this)
 	{
 		return;
 	}
-	const FVector Arrow = Character->GetActorLocation() - this->GetActorLocation();
-	const FVector Direction = Arrow.GetSafeNormal();
-	const FVector Force = Direction * ChargeForce;
-	Character->GetCapsuleComponent()->AddImpulse(Force);
-	DealDamageBase(Cast<APlayerCharacter>(Character));
+	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(OtherActor);
+	if (PlayerCharacter == nullptr)
+	{
+		return;
+	}
+
+	FVector Origin = this->GetActorLocation();
+	FVector Target = OtherActor->GetActorLocation();
+	Origin.Z = Target.Z = 0.0f;
+	const FVector TargetDirection = (Target - Origin).GetSafeNormal();
+
+	FVector FacingDirection = this->GetActorForwardVector().GetSafeNormal();
+	FacingDirection.Z = 0.0f;
+
+	const float Angle = FVector::DotProduct(FacingDirection, TargetDirection);
+	const FVector Force = FacingDirection * FMath::Cos(Angle) * ChargeForce;
+
+	PlayerCharacter->GetCharacterMovement()->AddImpulse(Force, true);
+	DealDamageBase(Cast<APlayerCharacter>(PlayerCharacter));
 }
 
 // Override

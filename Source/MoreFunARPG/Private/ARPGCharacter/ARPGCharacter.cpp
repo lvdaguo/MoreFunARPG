@@ -54,6 +54,7 @@ void AARPGCharacter::ChangeHealthBase(const int32 Diff)
 
 void AARPGCharacter::DealDamageBase(AARPGCharacter* Receiver) const
 {
+	// cast fail or hit self
 	if (Receiver == nullptr || Receiver == this)
 	{
 		return;
@@ -62,23 +63,34 @@ void AARPGCharacter::DealDamageBase(AARPGCharacter* Receiver) const
 	Receiver->ReceiveDamage(CalculatedDamage);
 }
 
-bool AARPGCharacter::BeginActionBase(bool& State, bool FailCondition)
+bool AARPGCharacter::BeginActionBase(bool& OutState, const bool FailCondition)
 {
 	if (FailCondition)
 	{
 		return FAIL;
 	}
-	State = true;
+	OutState = true;
 	return SUCCESS;
 }
 
-void AARPGCharacter::EndActionBase(bool& State)
+void AARPGCharacter::EndActionBase(bool& OutState)
 {
-	if (State == false)
+	if (OutState == false)
 	{
 		return;
 	}
-	State = false;
+	OutState = false;
+}
+
+// Weapon
+void AARPGCharacter::EnableWeapon(UPrimitiveComponent* WeaponHitBox)
+{
+	WeaponHitBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+}
+
+void AARPGCharacter::DisableWeapon(UPrimitiveComponent* WeaponHitBox)
+{
+	WeaponHitBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 // Listener
@@ -89,7 +101,6 @@ void AARPGCharacter::OnWeaponOverlap(AActor* OtherActor)
 
 void AARPGCharacter::OnHealthChange(const int32 Before, const int32 After)
 {
-	UE_LOG(LogTemp, Log, TEXT("HP Bef %d Aft %d"), Before, After)
 	if (Before != 0 && After == 0)
 	{
 		Die();

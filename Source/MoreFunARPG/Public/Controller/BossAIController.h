@@ -28,20 +28,12 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 
-	// Listener
-	UFUNCTION()
-	void OnPlayerDead();
-
-	UFUNCTION()
-	void OnPlayerRespawn();
-
 public:
+	// Task Helper
 	UFUNCTION(BlueprintCallable)
 	void StartChargeCoolDownCountDown();
 
 protected:
-	void SetChargeReady();
-
 	// Override
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override;

@@ -217,12 +217,12 @@ void AMonsterCharacter::EndInvincible()
 // Weapon
 void AMonsterCharacter::EnableWeapon(UPrimitiveComponent* WeaponHitBox)
 {
-	WeaponHitBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	Super::EnableWeapon(WeaponHitBox);
 }
 
 void AMonsterCharacter::DisableWeapon(UPrimitiveComponent* WeaponHitBox)
 {
-	WeaponHitBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Super::DisableWeapon(WeaponHitBox);
 }
 
 // Override

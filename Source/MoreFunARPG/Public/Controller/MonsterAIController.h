@@ -34,15 +34,6 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 
 	// Listener
-	UFUNCTION()
-	void OnPlayerDead();
-
-	UFUNCTION()
-	void OnPlayerRespawn();
-	
-	UFUNCTION()
-	void OnMonsterHealthChange(int32 Before, int32 After);
-
 	UFUNCTION(BlueprintCallable)
 	void OnTargetPerceptionUpdated(class AActor* Actor, const struct FAIStimulus& InStimulus);
 

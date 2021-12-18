@@ -162,10 +162,10 @@ protected:
 
 	// Weapon
 	UFUNCTION(BlueprintCallable)
-	static void EnableWeapon(class UPrimitiveComponent* WeaponHitBox);
+	virtual void EnableWeapon(class UPrimitiveComponent* WeaponHitBox) override;
 
 	UFUNCTION(BlueprintCallable)
-	static void DisableWeapon(class UPrimitiveComponent* WeaponHitBox);
+	virtual void DisableWeapon(class UPrimitiveComponent* WeaponHitBox) override;
 
 	// Listener
 	UFUNCTION()

@@ -53,24 +53,25 @@ protected:
 	// Safe Base
 	void ChangeHealthBase(int32 Diff);
 	void DealDamageBase(AARPGCharacter* Receiver) const;
-	static bool BeginActionBase(bool& State, bool FailCondition);
-	static void EndActionBase(bool& State);
+	static bool BeginActionBase(bool& OutState, bool FailCondition);
+	static void EndActionBase(bool& OutState);
 
 	// Virtual Base
 	virtual void Die();
 	virtual void ReceiveDamage(int32 Damage);
 	virtual int32 GetCalculatedDamage() const { return UNIMPLEMENTED; }
 
+	// Weapon
+	virtual void EnableWeapon(class UPrimitiveComponent* WeaponHitBox);
+
+	virtual void DisableWeapon(class UPrimitiveComponent* WeaponHitBox);
+	
 	// Listener
 	UFUNCTION()
 	virtual void OnHealthChange(const int32 Before, const int32 After);
 
 	virtual void OnWeaponOverlap(AActor* OtherActor);
 
-	// Getter
-	// virtual int32 GetMaxHealth() const { return UNIMPLEMENTED; }
-
-protected:
 	// Delegate
 	FHealthChange HealthChange;
 
