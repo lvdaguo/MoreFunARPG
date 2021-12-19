@@ -213,6 +213,7 @@ protected:
 	
 public:
 	FORCEINLINE FPlayerDie& PlayerDieEvent() { return PlayerDie; }
+	FORCEINLINE FGameOver& GameOverEvent() { return GameOver; }
 	FORCEINLINE FPlayerCameraLocationUpdate& PlayerCameraLocationUpdateEvent()
 	{
 		return PlayerCameraLocationUpdate;

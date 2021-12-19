@@ -20,7 +20,6 @@ void AMonsterAIController::SetupDelegate()
 {
 	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(
 		UGameplayStatics::GetActorOfClass(GetWorld(), APlayerCharacter::StaticClass()));
-
 	PlayerDieHandle = PlayerCharacter->PlayerDieEvent().AddLambda([this]()
 	{
 		BB_SET_BOOL(MonsterAIController::IsPlayerDead, true);
@@ -81,7 +80,10 @@ void AMonsterAIController::RemoveListener() const
 		UGameplayStatics::GetActorOfClass(GetWorld(), APlayerCharacter::StaticClass()));
 	ASpawner* Spawner = Cast<ASpawner>(UGameplayStatics::GetActorOfClass(GetWorld(), ASpawner::StaticClass()));
 	PlayerCharacter->PlayerDieEvent().Remove(PlayerDieHandle);
-	Spawner->PlayerRespawnEvent().Remove(PlayerRespawnHandle);
+	if (Spawner != nullptr)
+	{
+		Spawner->PlayerRespawnEvent().Remove(PlayerRespawnHandle);
+	}
 }
 
 // Override
@@ -102,6 +104,5 @@ void AMonsterAIController::OnUnPossess()
 {
 	Super::OnUnPossess();
 	RemoveListener();
-	
 	Destroy();
 }

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+#include "ARPGCharacter/PlayerCharacter.h"
 #include "Perception/AIPerceptionTypes.h"
 #include "MonsterAIController.generated.h"
 

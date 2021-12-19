@@ -19,6 +19,8 @@ void ASpawner::SetupDelegate()
 {
 	PlayerCharacter = GetWorld()->GetFirstPlayerController()->GetPawn<APlayerCharacter>();
 	PlayerCharacter->PlayerDieEvent().AddUObject(this, &ASpawner::OnPlayerDie);
+
+	PlayerCharacter->GameOverEvent().AddDynamic(this, &ASpawner::OnGameOver);
 }
 
 // Life Cycle
@@ -165,7 +167,7 @@ void ASpawner::OnMonsterDie(const AMonsterCharacter* MonsterCharacter)
 	}
 }
 
-void ASpawner::DelayedPlayerRespawn()
+void ASpawner::OnPlayerDie()
 {
 	FTimerHandle Handle;
 	const FTimerDelegate Delegate = FTimerDelegate::CreateLambda([this]()
@@ -175,7 +177,7 @@ void ASpawner::DelayedPlayerRespawn()
 	GetWorldTimerManager().SetTimer(Handle, Delegate, PlayerRespawnDelay, false);
 }
 
-void ASpawner::OnPlayerDie()
+void ASpawner::OnGameOver()
 {
-	DelayedPlayerRespawn();
+	Destroy();
 }

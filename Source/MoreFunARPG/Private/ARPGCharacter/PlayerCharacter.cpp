@@ -195,8 +195,8 @@ void APlayerCharacter::Die()
 	else
 	{
 		PlayerLife--;
-		PlayerDie.Broadcast();
 	}
+	PlayerDie.Broadcast();
 }
 
 void APlayerCharacter::CalculateDamage()

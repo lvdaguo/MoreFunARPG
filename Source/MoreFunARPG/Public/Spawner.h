@@ -105,11 +105,13 @@ protected:
 	// Listener
 	UFUNCTION()
 	void OnMonsterDie(const AMonsterCharacter* MonsterCharacter);
-	void DelayedPlayerRespawn();
 
 	UFUNCTION()
 	void OnPlayerDie();
 
+	UFUNCTION()
+	void OnGameOver();
+	
 	// Delegate
 	FPlayerExpUpdate PlayerExpUpdate;
 	FPlayerScoreUpdate PlayerScoreUpdate;

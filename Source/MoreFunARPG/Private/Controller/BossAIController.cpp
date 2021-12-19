@@ -91,7 +91,10 @@ void ABossAIController::RemoveListener() const
 		UGameplayStatics::GetActorOfClass(GetWorld(), APlayerCharacter::StaticClass()));
 	ASpawner* Spawner = Cast<ASpawner>(UGameplayStatics::GetActorOfClass(GetWorld(), ASpawner::StaticClass()));
 	PlayerCharacter->PlayerDieEvent().Remove(PlayerDieHandle);
-	Spawner->PlayerRespawnEvent().Remove(PlayerRespawnHandle);
+	if (Spawner != nullptr)
+	{
+		Spawner->PlayerRespawnEvent().Remove(PlayerRespawnHandle);
+	}
 }
 
 // Override
