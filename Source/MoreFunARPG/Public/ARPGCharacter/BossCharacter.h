@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "EnemyCharacter.h"
 #include "ARPGCharacter/ARPGCharacter.h"
 #include "DataTableRow/BossDataTableRow.h"
 #include "BossCharacter.generated.h"
@@ -8,7 +9,7 @@
 DECLARE_MULTICAST_DELEGATE(FBossDie);
 
 UCLASS()
-class MOREFUNARPG_API ABossCharacter final : public AARPGCharacter
+class MOREFUNARPG_API ABossCharacter final : public AEnemyCharacter
 {
 	GENERATED_BODY()
 
@@ -17,15 +18,9 @@ public:
 	ABossCharacter();
 
 protected:
-	// Setup Default
-	void SetupComponent();
-	void SetupAttachment() const;
-	void SetupComponentDefaultValues() const;
-
 	// Setup Runtime
 	virtual void SetupState() override;
 	void SetupDataFromDataTable();
-	virtual void SetupDelegate() override;
 
 	// Level Setup
 	void SetupLevelByTime();
@@ -34,13 +29,6 @@ protected:
 	// Life Cycle
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
-
-	// Component
-	UPROPERTY(VisibleAnywhere)
-	class USceneComponent* HealthBarTransform;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	class UWidgetComponent* HealthBar;
 
 	// Data From DataTable
 	TArray<struct FBossDataTableRow*> AllLevelData;
@@ -166,9 +154,6 @@ protected:
 	virtual void Die() override;
 	FORCEINLINE virtual int32 GetCalculatedDamage() const override;
 
-	// UI
-	void BarFacingTarget(FVector TargetLocation) const;
-
 	// Weapon
 	UFUNCTION(BlueprintCallable)
 	virtual void EnableWeapon(class UPrimitiveComponent* WeaponHitBox) override;
@@ -179,9 +164,6 @@ protected:
 	// Listener
 	UFUNCTION(BlueprintCallable)
 	void OnChargeOverlap(class AActor* OtherActor);
-
-	UFUNCTION()
-	void OnPlayerCameraLocationUpdated(FVector PlayerCamLocation);
 
 	virtual void OnHealthChange(const int32 Before, const int32 After) override;
 

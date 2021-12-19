@@ -12,32 +12,6 @@
 ABossCharacter::ABossCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
-
-	SetupComponent();
-	SetupAttachment();
-	SetupComponentDefaultValues();
-}
-
-// Setup Default
-void ABossCharacter::SetupComponent()
-{
-	HealthBarTransform = CreateDefaultSubobject<USceneComponent>(TEXT("HealthBarTransform"));
-	HealthBar = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBar"));
-}
-
-void ABossCharacter::SetupAttachment() const
-{
-	HealthBarTransform->SetupAttachment(RootComponent);
-	HealthBar->SetupAttachment(HealthBarTransform);
-}
-
-void ABossCharacter::SetupComponentDefaultValues() const
-{
-	const FVector Location(0.0f, 0.0f, 80.0f);
-	HealthBarTransform->SetWorldLocationAndRotation(Location, FRotator::ZeroRotator);
-	const FVector Scale(1.0f, 0.2f, 0.2f);
-	HealthBar->SetWorldScale3D(Scale);
-	HealthBar->SetWidgetSpace(EWidgetSpace::World);
 }
 
 // Setup Runtime
@@ -56,15 +30,6 @@ void ABossCharacter::SetupState()
 	bIsCharging = false;
 	bIsInvincible = false;
 	bIsStunning = false;
-}
-
-void ABossCharacter::SetupDelegate()
-{
-	Super::SetupDelegate();
-	
-	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(
-		UGameplayStatics::GetActorOfClass(GetWorld(), APlayerCharacter::StaticClass()));
-	PlayerCharacter->PlayerCameraLocationUpdateEvent().AddUObject(this, &ABossCharacter::OnPlayerCameraLocationUpdated);
 }
 
 // Level Setup
@@ -90,7 +55,6 @@ void ABossCharacter::SetupByLevel(const int32 Level)
 	CurLevelData = AllLevelData[LevelIndex];
 	MaxHealth = CurLevelData->MaxHealth;
 	CurHealth = MaxHealth;
-	UE_LOG(LogTemp, Log, TEXT("Boss Lv: %d"), Level);
 }
 
 // Life Cycle
@@ -109,15 +73,6 @@ void ABossCharacter::BeginPlay()
 void ABossCharacter::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-}
-
-// UI
-void ABossCharacter::BarFacingTarget(const FVector TargetLocation) const
-{
-	const FVector Start = HealthBarTransform->GetComponentLocation();
-	const FVector Target = TargetLocation;
-	const FRotator Rotation = UKismetMathLibrary::FindLookAtRotation(Start, Target);
-	HealthBarTransform->SetWorldRotation(Rotation);
 }
 
 // States
@@ -262,7 +217,6 @@ void ABossCharacter::OnWeaponOverlap(AActor* OtherActor)
 void ABossCharacter::Die()
 {
 	Super::Die();
-	HealthBar->SetVisibility(false);
 	BossDie.Broadcast();
 	BossDie.Clear();
 	SetLifeSpan(DeadBodyExistTime);
@@ -280,12 +234,6 @@ void ABossCharacter::ReceiveDamage(const int32 Damage)
 		ChangeHealthBase(-1 * Damage);
 	}
 }
-
-// Listener
-void ABossCharacter::OnPlayerCameraLocationUpdated(FVector PlayerCamLocation)
-{
-	BarFacingTarget(PlayerCamLocation);
-} 
 
 void ABossCharacter::OnHealthChange(const int32 Before, const int32 After)
 {

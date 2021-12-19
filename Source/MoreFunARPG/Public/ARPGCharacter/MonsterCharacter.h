@@ -2,13 +2,14 @@
 
 #include "CoreMinimal.h"
 #include "ARPGCharacter.h"
+#include "EnemyCharacter.h"
 #include "DataTableRow/MonsterDataTableRow.h"
 #include "MonsterCharacter.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FMonsterDie, const class AMonsterCharacter*);
 
 UCLASS()
-class MOREFUNARPG_API AMonsterCharacter final : public AARPGCharacter
+class MOREFUNARPG_API AMonsterCharacter final : public AEnemyCharacter
 {
 	GENERATED_BODY()
 
@@ -17,15 +18,9 @@ public:
 	AMonsterCharacter();
 
 protected:
-	// Setup Default
-	void SetupComponent();
-	void SetupAttachment() const;
-	void SetupComponentDefaultValues() const;
-
 	// Setup Runtime
 	virtual void SetupState() override;
 	void SetupDataFromDataTable() ;
-	virtual void SetupDelegate() override;
 	void SetupRandomMesh();
 	
 	// Level Setup
@@ -35,13 +30,6 @@ protected:
 	// Life Cycle
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
-
-	// Component
-	UPROPERTY(VisibleAnywhere)
-	class USceneComponent* HealthBarTransform;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	class UWidgetComponent* HealthBar;
 	
 	// Data From DataTable
 	TArray<struct FMonsterDataTableRow*> AllLevelData;
@@ -157,9 +145,6 @@ protected:
 	// Running
 	void LerpSpeed(float DeltaTime);
 
-	// UI
-	void BarFacingTarget(FVector TargetLocation) const;
-
 	// Weapon
 	UFUNCTION(BlueprintCallable)
 	virtual void EnableWeapon(class UPrimitiveComponent* WeaponHitBox) override;
@@ -167,10 +152,6 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	virtual void DisableWeapon(class UPrimitiveComponent* WeaponHitBox) override;
 
-	// Listener
-	UFUNCTION()
-	void OnPlayerCameraLocationUpdated(FVector PlayerCamLocation);
-	
 	// Delegate
 	FMonsterDie MonsterDie;
 

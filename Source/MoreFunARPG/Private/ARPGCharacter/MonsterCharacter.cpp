@@ -4,40 +4,11 @@
 #include "ARPGCharacter/PlayerCharacter.h"
 #include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Kismet/GameplayStatics.h"
-#include "Kismet/KismetMathLibrary.h"
 
 // Constructor
 AMonsterCharacter::AMonsterCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
-
-	SetupComponent();
-	SetupAttachment();
-	SetupComponentDefaultValues();
-}
-
-// Setup Default
-void AMonsterCharacter::SetupComponent()
-{
-	HealthBarTransform = CreateDefaultSubobject<USceneComponent>(TEXT("HealthBarTransform"));
-	HealthBar = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBar"));
-}
-
-void AMonsterCharacter::SetupAttachment() const
-{
-	HealthBarTransform->SetupAttachment(RootComponent);
-	HealthBar->SetupAttachment(HealthBarTransform);
-}
-
-void AMonsterCharacter::SetupComponentDefaultValues() const
-{
-	const FVector Location(0.0f, 0.0f, 80.0f);
-	const FRotator Rotation(0.0f, 0.0f, 0.0f);
-	HealthBarTransform->SetWorldLocationAndRotation(Location, Rotation);
-
-	HealthBar->SetWorldScale3D(FVector(1.0f, 0.2f, 0.2f));
-	HealthBar->SetWidgetSpace(EWidgetSpace::World);
 }
 
 // Setup Runtime
@@ -58,15 +29,6 @@ void AMonsterCharacter::SetupState()
 	bIsHealing = false;
 	bIsAttacking = false;
 	bIsRunning = false;
-}
-
-void AMonsterCharacter::SetupDelegate()
-{
-	Super::SetupDelegate();
-	
-	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(
-		UGameplayStatics::GetActorOfClass(GetWorld(), APlayerCharacter::StaticClass()));
-	PlayerCharacter->PlayerCameraLocationUpdateEvent().AddUObject(this, &AMonsterCharacter::OnPlayerCameraLocationUpdated);
 }
 
 void AMonsterCharacter::SetupRandomMesh()
@@ -98,7 +60,6 @@ void AMonsterCharacter::SetupByLevel(const int32 Level)
 	CurLevelData = AllLevelData[LevelIndex];
 	MaxHealth = CurLevelData->MaxHealth;
 	CurHealth = MaxHealth;
-	UE_LOG(LogTemp, Log, TEXT("Monster Lv: %d"), Level);
 }
 
 // Life Cycle
@@ -121,15 +82,6 @@ void AMonsterCharacter::Tick(const float DeltaTime)
 	Super::Tick(DeltaTime);
 	
 	LerpSpeed(DeltaTime);
-}
-
-// UI
-void AMonsterCharacter::BarFacingTarget(const FVector TargetLocation) const
-{
-	const FVector Start = HealthBarTransform->GetComponentLocation();
-	const FVector Target = TargetLocation;
-	const FRotator Rotation = UKismetMathLibrary::FindLookAtRotation(Start, Target);
-	HealthBarTransform->SetWorldRotation(Rotation);
 }
 
 // Running
@@ -234,7 +186,6 @@ void AMonsterCharacter::OnWeaponOverlap(AActor* OtherActor)
 void AMonsterCharacter::Die()
 {
 	Super::Die();
-	HealthBar->SetVisibility(false);
 	MonsterDie.Broadcast(this);
 	MonsterDie.Clear();
 	SetLifeSpan(DeadBodyExistTime);
@@ -262,10 +213,4 @@ void AMonsterCharacter::ReceiveDamage(const int32 Damage)
 			OnHit();
 		}
 	}
-}
-
-// Listener
-void AMonsterCharacter::OnPlayerCameraLocationUpdated(FVector PlayerCamLocation)
-{
-	BarFacingTarget(PlayerCamLocation);
 }
